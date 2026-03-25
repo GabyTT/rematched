@@ -1,0 +1,251 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --panel: #011118;
+  --input: #2b373e;
+  --accent: #d1133a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-panel: var(--panel);
+  --color-input: var(--input);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.nav-pill,
+.card-cta,
+.app-button,
+.app-input,
+.page-panel,
+.interactive-panel,
+.home-stage-card,
+.stage-icon,
+.nav-icon {
+  transition:
+    background-color 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 340ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 340ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.page-panel {
+  will-change: transform, opacity;
+}
+
+.interactive-panel:hover {
+  transform: translateY(-6px) scale(1.01);
+  border-color: rgba(209, 19, 58, 0.45);
+  box-shadow:
+    0 26px 60px rgba(0, 0, 0, 0.36),
+    0 0 0 1px rgba(209, 19, 58, 0.14),
+    0 0 22px rgba(209, 19, 58, 0.1);
+}
+
+.home-stage-card:hover {
+  transform: translateY(-8px) scale(1.01);
+  border-color: rgba(209, 19, 58, 0.55);
+  box-shadow:
+    0 28px 64px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(209, 19, 58, 0.18),
+    0 0 28px rgba(209, 19, 58, 0.14);
+}
+
+.home-stage-card:hover .stage-icon {
+  transform: translateY(-2px);
+  filter: brightness(1.16);
+}
+
+.app-button:hover {
+  transform: translateY(-2px) scale(1.012);
+  box-shadow:
+    0 18px 38px rgba(209, 19, 58, 0.2),
+    0 0 18px rgba(209, 19, 58, 0.1);
+}
+
+.app-button:active {
+  transform: translateY(0) scale(0.995);
+}
+
+.save-discover-dirty {
+  background:
+    linear-gradient(135deg, rgba(236, 53, 110, 0.98), rgba(209, 19, 58, 1));
+  border-color: rgba(255, 190, 214, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(255, 184, 208, 0.28),
+    0 22px 44px rgba(209, 19, 58, 0.34),
+    0 0 30px rgba(255, 111, 162, 0.28),
+    0 0 52px rgba(255, 111, 162, 0.12);
+  filter: brightness(1.06) saturate(1.12);
+}
+
+.save-discover-dirty:hover {
+  background:
+    linear-gradient(135deg, rgba(244, 76, 130, 1), rgba(221, 29, 72, 1));
+  box-shadow:
+    0 0 0 1px rgba(255, 200, 220, 0.34),
+    0 24px 48px rgba(209, 19, 58, 0.38),
+    0 0 34px rgba(255, 122, 171, 0.34),
+    0 0 58px rgba(255, 122, 171, 0.16);
+}
+
+.save-discover-pop {
+  animation: saveDiscoverPop 440ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card-cta:hover {
+  transform: translateY(-2px) scale(1.015);
+  box-shadow:
+    0 18px 38px rgba(209, 19, 58, 0.22),
+    0 0 18px rgba(209, 19, 58, 0.12);
+}
+
+.card-cta:active {
+  transform: translateY(0) scale(0.995);
+}
+
+.app-input:focus,
+.app-input:focus-visible {
+  border-color: rgba(209, 19, 58, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(209, 19, 58, 0.22),
+    0 0 22px rgba(209, 19, 58, 0.12);
+}
+
+.nav-pill:hover {
+  border-color: rgba(209, 19, 58, 0.55);
+  background-color: rgba(209, 19, 58, 0.14);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.22),
+    0 0 18px rgba(209, 19, 58, 0.1);
+}
+
+.nav-pill:hover .nav-icon,
+.card-cta:hover .stage-icon {
+  transform: translateY(-2px);
+  filter: brightness(1.16);
+}
+
+@keyframes riseFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes saveDiscoverPop {
+  0% {
+    transform: scale(1);
+  }
+
+  55% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .motion-rise-fade {
+    opacity: 0;
+    animation: riseFadeIn 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .motion-delay-0 {
+    animation-delay: 0ms;
+  }
+
+  .motion-delay-1 {
+    animation-delay: 120ms;
+  }
+
+  .motion-delay-2 {
+    animation-delay: 240ms;
+  }
+
+  .motion-delay-3 {
+    animation-delay: 360ms;
+  }
+
+  .motion-delay-4 {
+    animation-delay: 500ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-pill,
+  .card-cta,
+  .app-button,
+  .app-input,
+  .page-panel,
+  .interactive-panel,
+  .home-stage-card,
+  .stage-icon,
+  .nav-icon {
+    transition: none;
+  }
+
+  .motion-rise-fade {
+    animation: none;
+  }
+
+  .save-discover-pop {
+    animation: none;
+  }
+}
+
+.swipe-card {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.swipe-card:active {
+  cursor: grabbing;
+}
+
+.swipe-card * {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+.swipe-card button {
+  pointer-events: auto;
+}
+
+.swipe-card img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
