@@ -139,7 +139,7 @@ export function SwipeDeck({
             href="/like"
             className="inline-flex w-fit rounded-full border border-accent px-4 py-2 text-sm text-white transition hover:bg-accent"
           >
-            Review shortlist ({likedCount})
+            Review liked ({likedCount})
           </Link>
         </div>
       </div>
@@ -221,14 +221,15 @@ export function SwipeDeck({
                     ) : null}
                     <CarCard
                       {...car}
+                      variant="light"
                       footer={
                         <div className="flex gap-3">
                           <button
                             type="button"
                             onClick={() => triggerButtonSwipe("left")}
-                            className="pointer-events-auto inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-input bg-input px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:border-accent"
+                            className="pointer-events-auto inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-[#D9E0E7] bg-white px-4 py-2.5 text-sm font-semibold text-[#16212B] transition duration-200 hover:border-accent"
                           >
-                            <ThumbsDown size={18} className="text-slate-300" />
+                            <ThumbsDown size={18} className="text-[#6B7A89]" />
                             Pass
                           </button>
                           <button
@@ -236,7 +237,7 @@ export function SwipeDeck({
                             onClick={() => triggerButtonSwipe("right")}
                             className="pointer-events-auto inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-accent bg-accent px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:brightness-110"
                           >
-                            <ThumbsUp size={18} className="text-slate-300" />
+                            <ThumbsUp size={18} className="text-white" />
                             Like
                           </button>
                         </div>

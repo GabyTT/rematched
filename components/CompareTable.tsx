@@ -1,26 +1,29 @@
-import {
-  FileText,
-  GitCompare,
-  Heart,
-  ThumbsDown,
-  ThumbsUp,
-} from "lucide-react";
+import Image from "next/image";
+import { Eye, FileText, X } from "lucide-react";
 
 import type { Car } from "@/lib/cars";
 
+type CompareCar = Car & {
+  notes: string;
+};
+
 type CompareTableProps = {
-  cars: Array<
-    Car & {
-      notes: string;
-    }
-  >;
-  onMoveToLike: (carId: string) => void;
-  onReject: (carId: string) => void;
-  onKeepMatched: (carId: string) => void;
+  cars: CompareCar[];
+  onViewDetails: (carId: string) => void;
+  onOpenNotes: (carId: string) => void;
+  onRemoveFromEngage: (carId: string) => void;
+  maxCars?: number;
 };
 
 const rows: Array<{
-  key: "price" | "mileage" | "year" | "fuel" | "transmission" | "notes";
+  key:
+    | "price"
+    | "mileage"
+    | "year"
+    | "fuel"
+    | "transmission"
+    | "location"
+    | "notes";
   label: string;
 }> = [
   { key: "price", label: "Price" },
@@ -28,93 +31,130 @@ const rows: Array<{
   { key: "year", label: "Year" },
   { key: "fuel", label: "Fuel" },
   { key: "transmission", label: "Transmission" },
+  { key: "location", label: "Location" },
   { key: "notes", label: "Notes" },
 ];
 
+const emphasizedRows = new Set(["price", "mileage", "year"]);
+
 export function CompareTable({
   cars,
-  onMoveToLike,
-  onReject,
-  onKeepMatched,
+  onViewDetails,
+  onOpenNotes,
+  onRemoveFromEngage,
+  maxCars = 3,
 }: CompareTableProps) {
+  const slots = Array.from({ length: maxCars }, (_, index) => cars[index] ?? null);
+
   return (
-    <div className="overflow-x-auto rounded-[24px] border border-input bg-input/60">
-      <table className="min-w-full border-collapse">
+    <div className="overflow-x-auto rounded-[24px] border border-white/8 bg-transparent">
+      <table className="min-w-[56rem] w-full border-collapse">
         <thead>
           <tr>
-            <th className="border-b border-input px-4 py-3 text-left text-sm font-semibold text-slate-300">
-              <span className="inline-flex items-center gap-2">
-                <GitCompare size={20} className="text-slate-300" />
-                Compare
-              </span>
+            <th className="w-40 border-b border-white/10 px-5 py-6 text-left align-bottom text-base font-semibold uppercase tracking-[0.18em] text-slate-400">
+              Compare
             </th>
-            {cars.map((car) => (
+            {slots.map((car, index) => (
               <th
-                key={car.id}
-                className="border-b border-l border-input px-4 py-3 text-left text-sm font-semibold text-white"
+                key={car?.id ?? `empty-slot-${index}`}
+                className="border-b border-l border-white/10 px-5 py-6 text-left align-top"
               >
-                <div className="space-y-3">
-                  <div>
-                    <p>{car.name}</p>
-                    <p className="mt-1 text-xs font-medium text-slate-400">
-                      {car.location}
+                {car ? (
+                  <div className="space-y-4">
+                    <div className="relative aspect-[16/10] overflow-hidden rounded-[20px]">
+                      <Image
+                        src={car.image}
+                        alt={car.name}
+                        fill
+                        sizes="(max-width: 767px) 80vw, 28vw"
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                    </div>
+                    <div>
+                      <p className="text-[1.3rem] font-semibold leading-tight text-white sm:text-[1.4rem]">
+                        {car.name}
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold leading-tight text-white sm:text-[1.5rem]">
+                        {car.price}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onViewDetails(car.id)}
+                        className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/18 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/35 hover:bg-white/6 hover:text-white"
+                      >
+                        <Eye size={18} className="text-slate-200" />
+                        View details
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onOpenNotes(car.id)}
+                        className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/18 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/35 hover:bg-white/6 hover:text-white"
+                      >
+                        <FileText size={18} className="text-slate-200" />
+                        Notes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveFromEngage(car.id)}
+                        className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/10 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-400 transition hover:border-white/20 hover:bg-white/4 hover:text-slate-200"
+                      >
+                        <X size={18} className="text-slate-500" />
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex min-h-[22rem] flex-col items-center justify-center rounded-[20px] border border-dashed border-white/10 bg-white/[0.02] px-5 text-center">
+                    <p className="text-base font-semibold text-white">Add another finalist</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                      Engage another car to compare up to 3 finalists side by side.
                     </p>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onMoveToLike(car.id)}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-input bg-panel px-3 py-2 text-xs font-semibold text-white transition hover:border-accent"
-                    >
-                      <ThumbsUp size={18} className="text-slate-300" />
-                      Like
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onReject(car.id)}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-input bg-panel px-3 py-2 text-xs font-semibold text-white transition hover:border-accent"
-                    >
-                      <ThumbsDown size={18} className="text-slate-300" />
-                      Pass
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onKeepMatched(car.id)}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-accent px-3 py-2 text-xs font-semibold text-white transition hover:bg-accent"
-                    >
-                      <Heart size={18} className="text-red-500" />
-                      Engage
-                    </button>
-                  </div>
-                </div>
+                )}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={row.key}>
-              <th className="border-b border-input px-4 py-3 text-left text-sm font-medium text-slate-300">
+          {rows.map((row, rowIndex) => (
+            <tr
+              key={row.key}
+              className={rowIndex % 2 === 0 ? "bg-white/[0.02]" : "bg-transparent"}
+            >
+              <th className="border-b border-white/10 px-5 py-4.5 text-left text-base font-semibold text-slate-400">
                 {row.label}
               </th>
-              {cars.map((car) => (
+              {slots.map((car, index) => (
                 <td
-                  key={`${car.id}-${row.key}`}
-                  className="border-b border-l border-input px-4 py-3 text-sm text-slate-300"
+                  key={`${car?.id ?? `empty-slot-${index}`}-${row.key}`}
+                  className={`border-b border-l border-white/10 px-5 py-4.5 align-top text-lg leading-7 text-slate-100 ${
+                    emphasizedRows.has(row.key) ? "font-semibold text-white" : "font-semibold"
+                  }`}
                 >
-                  {row.key === "price" ? car.price : null}
-                  {row.key === "mileage" ? car.mileage : null}
-                  {row.key === "year" ? car.year : null}
-                  {row.key === "fuel" ? car.fuel : null}
-                  {row.key === "transmission" ? car.transmission : null}
-                  {row.key === "notes"
-                    ? car.notes || (
-                        <span className="inline-flex items-center gap-2">
-                          <FileText size={16} className="text-slate-300" />
-                          No notes added
-                        </span>
-                      )
-                    : null}
+                  {car ? (
+                    row.key === "price" ? (
+                      <span className="font-semibold text-white">{car.price}</span>
+                    ) : row.key === "mileage" ? (
+                      car.mileage
+                    ) : row.key === "year" ? (
+                      car.year
+                    ) : row.key === "fuel" ? (
+                      car.fuel
+                    ) : row.key === "transmission" ? (
+                      car.transmission
+                    ) : row.key === "location" ? (
+                      car.location
+                    ) : car.notes ? (
+                      car.notes
+                    ) : (
+                      <span className="text-slate-500">No notes added</span>
+                    )
+                  ) : (
+                    <span className="text-slate-500">—</span>
+                  )}
                 </td>
               ))}
             </tr>

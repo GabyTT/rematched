@@ -82,6 +82,10 @@ export function AppChrome() {
 
     setIsDrawerOpen(false);
   };
+  const activeNavClass =
+    "border-[#E7EDF3] bg-[#F7F7F8] text-[#E1144F] shadow-[0_12px_28px_rgba(0,0,0,0.2)]";
+  const inactiveNavClass =
+    "nav-pill-inactive border-[#40515F] bg-[#2E3C4A] text-[#E1E7EE]";
 
   return (
     <>
@@ -106,10 +110,9 @@ export function AppChrome() {
                       );
                     }
                   }}
-                  className={`nav-pill rounded-full border px-4 py-2 text-sm font-medium ${
-                    isActive
-                      ? "border-accent bg-accent text-white"
-                      : "border-input bg-input text-slate-300 hover:border-accent"
+                  data-active={isActive ? "true" : "false"}
+                  className={`nav-pill rounded-full border px-4 py-2 text-sm font-semibold ${
+                    isActive ? activeNavClass : inactiveNavClass
                   }`}
                 >
                   <span className="inline-flex items-center gap-2">
@@ -122,7 +125,8 @@ export function AppChrome() {
             <button
               type="button"
               onClick={logOut}
-              className="nav-pill rounded-full border border-input bg-input px-4 py-2 text-sm font-medium text-slate-300 hover:border-accent"
+              data-active="false"
+              className={`nav-pill rounded-full border px-4 py-2 text-sm font-semibold ${inactiveNavClass}`}
             >
               <span className="inline-flex items-center gap-2">
                 <LogOut size={16} strokeWidth={2} className="nav-icon" />
@@ -130,10 +134,11 @@ export function AppChrome() {
               </span>
             </button>
           </nav>
-          <button
-            type="button"
-            onClick={() => setIsDrawerOpen((current) => !current)}
-            className="inline-flex rounded-full border border-input bg-input p-2 text-white transition hover:border-accent lg:hidden"
+            <button
+              type="button"
+              onClick={() => setIsDrawerOpen((current) => !current)}
+              data-active="false"
+            className="nav-pill nav-pill-inactive inline-flex rounded-full border border-[#40515F] bg-[#2E3C4A] p-2 text-[#D7DEE6] transition lg:hidden"
             aria-label={isDrawerOpen ? "Close menu" : "Open menu"}
             aria-expanded={isDrawerOpen}
           >
@@ -158,7 +163,8 @@ export function AppChrome() {
               <button
                 type="button"
                 onClick={() => setIsDrawerOpen(false)}
-                className="inline-flex rounded-full border border-input bg-input p-2 text-white transition hover:border-accent"
+                data-active="false"
+                className="nav-pill nav-pill-inactive inline-flex rounded-full border border-[#40515F] bg-[#2E3C4A] p-2 text-[#D7DEE6] transition"
                 aria-label="Close menu"
               >
                 <X size={18} />
@@ -174,10 +180,9 @@ export function AppChrome() {
                     key={item.href}
                     href={item.href}
                     onClick={() => handleDrawerSelect(item.href)}
-                    className={`nav-pill rounded-2xl border px-4 py-3 text-sm font-medium ${
-                      isActive
-                        ? "border-accent bg-accent text-white"
-                        : "border-input bg-input text-slate-300 hover:border-accent"
+                    data-active={isActive ? "true" : "false"}
+                    className={`nav-pill rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                      isActive ? activeNavClass : inactiveNavClass
                     }`}
                   >
                     <span className="inline-flex items-center gap-3">
@@ -193,7 +198,8 @@ export function AppChrome() {
                   logOut();
                   setIsDrawerOpen(false);
                 }}
-                className="nav-pill rounded-2xl border border-input bg-input px-4 py-3 text-left text-sm font-medium text-slate-300 hover:border-accent"
+                data-active="false"
+                className={`nav-pill rounded-2xl border px-4 py-3 text-left text-sm font-semibold ${inactiveNavClass}`}
               >
                 <span className="inline-flex items-center gap-3">
                   <LogOut size={18} strokeWidth={2} className="nav-icon" />

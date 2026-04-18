@@ -222,11 +222,18 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     const previousState = carProgress[carId]?.state ?? null;
 
     setCarProgress((current) => {
+      const currentMatchedCount = Object.entries(current).filter(
+        ([id, value]) => value.state === "matched" && id !== carId,
+      ).length;
+      const nextState =
+        state === "matched" && previousState !== "matched" && currentMatchedCount >= 3
+          ? previousState
+          : state;
       const next = {
         ...current,
         [carId]: {
           ...current[carId],
-          state,
+          state: nextState,
         },
       };
       persistProgress(next);

@@ -528,7 +528,7 @@ export default function LifeTogetherPage() {
                     key={car.id}
                     className={`page-panel relative min-w-72 rounded-[24px] border p-5 transition ${
                       isActive
-                        ? "border-accent bg-accent/10 shadow-[0_18px_40px_rgba(209,19,58,0.14)]"
+                        ? "border-accent bg-accent/10 shadow-[0_18px_40px_rgba(225,20,79,0.14)]"
                         : "border-input bg-input/60"
                     }`}
                   >

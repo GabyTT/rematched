@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "RevMatched",
-  description: "A car marketplace built around range-based matching, swiping, and shortlist stages.",
+  description: "A car marketplace built around define, discover, liked, and engage stages.",
 };
 
 export default function RootLayout({

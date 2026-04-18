@@ -1,8 +1,9 @@
 "use client";
 
+import type { MouseEvent } from "react";
 import Link from "next/link";
 import {
-  MessageCircle,
+  Heart,
   Search,
   SlidersHorizontal,
   ThumbsUp,
@@ -23,30 +24,26 @@ const roadmapSteps = [
   {
     key: "define",
     title: "Define",
-    label: "Set preferences",
     href: "/find-the-one",
     icon: SlidersHorizontal,
   },
   {
     key: "discover",
     title: "Discover",
-    label: "Swipe matches",
     href: "/discover",
     icon: Search,
   },
   {
     key: "like",
-    title: "Like",
-    label: "Your shortlist",
+    title: "Liked",
     href: "/like",
     icon: ThumbsUp,
   },
   {
     key: "match",
-    title: "Engage",
-    label: "Start the conversation",
+    title: "Top Picks",
     href: "/match",
-    icon: MessageCircle,
+    icon: Heart,
   },
 ] as const;
 
@@ -54,7 +51,16 @@ export function Roadmap({ step }: RoadmapProps) {
   const mounted = useMounted();
   const { carProgress, preferences } = useJourney();
   const activeIndex = roadmapSteps.findIndex((item) => item.key === step);
-  const handleDiscoverClick = (href: string) => {
+  const handleDiscoverClick = (
+    event: MouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) => {
+    if (href === "/discover" && step === "define") {
+      event.preventDefault();
+      window.dispatchEvent(new Event("revmatched:save-and-discover"));
+      return;
+    }
+
     if (href === "/discover" && step === "discover") {
       window.dispatchEvent(new Event("revmatched:refresh-discover"));
     }
@@ -66,6 +72,7 @@ export function Roadmap({ step }: RoadmapProps) {
   const matchCount = Object.values(carProgress).filter(
     (value) => value.state === "matched",
   ).length;
+  const topPicksLabel = matchCount === 1 ? "The One" : "Top Picks";
   const stepIndex = {
     define: 0,
     discover: 1,
@@ -85,25 +92,25 @@ export function Roadmap({ step }: RoadmapProps) {
   ];
 
   return (
-    <section className="border-b border-input bg-black/70">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-5 py-4 sm:px-8 lg:px-12">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+    <section className="border-b border-white/5 bg-[linear-gradient(180deg,rgba(3,11,17,0.92)_0%,rgba(3,11,17,0.76)_100%)]">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-5 py-5 sm:px-8 lg:px-12 lg:py-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-400">
           Journey roadmap
         </p>
         <div className="overflow-x-auto pb-1">
           <div className="relative min-w-[34rem] md:min-w-0">
-            <div className="absolute left-[12.5%] right-[12.5%] top-5 grid grid-cols-3 gap-3">
+            <div className="absolute left-[12.5%] right-[12.5%] top-[2rem] grid grid-cols-3 gap-3 sm:top-9 sm:gap-4">
               {connectorStates.map((isActive, index) => (
                 <div
                   key={roadmapSteps[index + 1]?.key}
-                  className={`h-px rounded-full transition-colors duration-300 ${
-                    isActive ? "bg-accent" : "bg-input"
+                  className={`h-[2px] rounded-full transition-colors duration-300 ${
+                    isActive ? "bg-accent" : "bg-slate-800"
                   }`}
                   aria-hidden="true"
                 />
               ))}
             </div>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 gap-3 sm:gap-4">
               {roadmapSteps.map((item, index) => {
                 const isCompleted = index < activeIndex;
                 const isActive = index === activeIndex;
@@ -122,43 +129,37 @@ export function Roadmap({ step }: RoadmapProps) {
                           ? matchCount
                           : 0
                         : null;
+                const label = item.key === "match" ? topPicksLabel : item.title;
                 const iconShellClasses = isActive
-                  ? "border-accent bg-accent text-white shadow-[0_0_0_4px_rgba(209,19,58,0.16)]"
+                  ? "border-[#E7EDF3] bg-[#F7F7F8] text-[#E1144F]"
                   : isCompleted
                     ? "border-accent bg-accent text-white"
-                    : "border-input bg-panel text-slate-400";
+                    : "border-slate-700 bg-[#16212b] text-slate-300";
                 const titleClasses = isActive
                   ? "text-white"
                   : isCompleted
-                    ? "text-slate-200"
-                    : "text-slate-400";
-                const labelClasses = isActive || isCompleted
-                  ? "text-slate-300"
-                  : "text-slate-500";
-
+                    ? "text-slate-100"
+                    : "text-slate-300";
                 return (
                   <Link
                     key={item.key}
                     href={item.href}
-                    onClick={() => handleDiscoverClick(item.href)}
-                    className="relative z-10 flex min-w-0 flex-col items-center text-center"
+                    onClick={(event) => handleDiscoverClick(event, item.href)}
+                    className="nav-pill relative z-10 flex min-w-0 flex-col items-center rounded-[28px] border border-transparent px-2 py-2 text-center sm:px-3"
                     aria-current={isActive ? "step" : undefined}
                   >
                     <span
-                      className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${iconShellClasses}`}
+                      className={`inline-flex h-[3.5rem] w-[3.5rem] items-center justify-center rounded-full border transition sm:h-[4.5rem] sm:w-[4.5rem] ${iconShellClasses}`}
                     >
-                      <Icon size={20} aria-hidden="true" />
+                      <Icon size={24} strokeWidth={2.2} aria-hidden="true" className="sm:h-8 sm:w-8" />
                     </span>
-                    <span className="mt-3 flex items-center justify-center text-sm font-semibold">
-                      <span className={titleClasses}>{item.title}</span>
+                    <span className="mt-3 flex items-center justify-center text-[0.92rem] font-semibold uppercase tracking-[0.12em] sm:mt-4 sm:text-[1.12rem] sm:tracking-[0.16em] md:text-[1.2rem]">
+                      <span className={titleClasses}>{label}</span>
                       {count !== null ? (
-                        <span className="ml-2 rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-200">
+                        <span className="ml-1.5 inline-flex min-w-8 items-center justify-center rounded-full bg-slate-800 px-2 py-0.5 text-[0.9rem] font-semibold leading-none text-slate-100 sm:ml-2 sm:min-w-10 sm:px-3 sm:py-1 sm:text-[1.02rem] md:text-[1.1rem]">
                           {count}
                         </span>
                       ) : null}
-                    </span>
-                    <span className={`mt-1 text-xs sm:text-sm ${labelClasses}`}>
-                      {item.label}
                     </span>
                   </Link>
                 );

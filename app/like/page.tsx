@@ -19,7 +19,15 @@ export default function LikePage() {
     return null;
   }
 
-  const likedCars = cars.filter((car) => carProgress[car.id]?.state === "liked");
+  const reviewCars = cars.filter((car) =>
+    ["liked", "matched"].includes(carProgress[car.id]?.state ?? ""),
+  );
+  const engagedCount = cars.filter(
+    (car) => carProgress[car.id]?.state === "matched",
+  ).length;
+  const canEngageMore = engagedCount < 3;
+  const engageCtaText =
+    engagedCount === 1 ? "Review The One" : "Compare Top Picks";
   const activeNotesCar = activeNotesCarId
     ? cars.find((car) => car.id === activeNotesCarId) ?? null
     : null;
@@ -27,90 +35,123 @@ export default function LikePage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
-        <section className="page-panel motion-rise-fade motion-delay-0 rounded-[28px] border border-input bg-panel p-5 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-6">
-          <p className="text-sm uppercase tracking-[0.24em] text-slate-400">
-            LIKE stage
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
-            Review your shortlist
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-            The cars you saved in Discover show up here so you can compare them
-            before reaching out.
-          </p>
-        </section>
-
-        {likedCars.length ? (
-          <section className="space-y-5">
-            <div className="page-panel motion-rise-fade motion-delay-1 flex flex-col gap-4 rounded-[28px] border border-input bg-panel p-5 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:flex-row sm:items-end sm:justify-between sm:p-6">
-              <div>
+        {reviewCars.length ? (
+          <section className="page-panel motion-rise-fade motion-delay-0 rounded-[28px] border border-input bg-panel p-5 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="max-w-3xl">
                 <p className="text-sm uppercase tracking-[0.24em] text-slate-400">
-                  Saved cars
+                  LIKED
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">
-                  Your shortlist
-                </h2>
+                <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
+                  Your Liked Cars
+                </h1>
+                <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">
+                  These caught your eye—review them before deciding who to engage.
+                </p>
               </div>
-              <Link
-                href="/match"
-                className="app-button inline-flex w-fit items-center rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
-              >
-                Continue to Engage
-              </Link>
+              <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+                <Link
+                  href="/match"
+                  className="app-button inline-flex w-fit items-center rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+                >
+                  {engageCtaText}
+                </Link>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {likedCars.map((car) => (
-                <CarCard
-                  key={car.id}
-                  {...car}
-                  indicator={
-                    carProgress[car.id]?.notes ? (
-                      <p className="inline-flex items-center gap-2 text-sm text-slate-300">
-                        <FileText size={16} className="text-slate-300" />
-                        Notes added
-                      </p>
-                    ) : null
-                  }
-                  footer={
-                    <div className="flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setCarState(car.id, "rejected")}
-                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-input bg-input px-4 py-2.5 text-sm font-semibold text-white transition hover:border-accent"
-                      >
-                        <ThumbsDown size={18} className="text-slate-300" />
-                        Pass
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCarState(car.id, "matched")}
-                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent"
-                      >
-                        <Heart size={18} className="text-red-500" />
-                        Engage
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveNotesCarId(car.id)}
-                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-input bg-input px-4 py-2.5 text-sm font-semibold text-white transition hover:border-accent"
-                      >
-                        <FileText size={18} className="text-slate-300" />
-                        Notes
-                      </button>
-                    </div>
-                  }
-                />
-              ))}
+            <div className="mt-6 rounded-[24px] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.015)_0%,rgba(255,255,255,0.005)_100%)] p-1.5 sm:p-2">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {reviewCars.map((car) => {
+                  const isInTopPicks = carProgress[car.id]?.state === "matched";
+
+                  return (
+                    <CarCard
+                      key={car.id}
+                      {...car}
+                      topPickCount={engagedCount}
+                      status={isInTopPicks ? "engaged" : "liked"}
+                      indicator={
+                        carProgress[car.id]?.notes ? (
+                          <p className="inline-flex items-center gap-2 text-sm text-slate-300">
+                            <FileText size={16} className="text-slate-300" />
+                            Notes added
+                          </p>
+                        ) : null
+                      }
+                      footer={
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setCarState(car.id, "rejected")}
+                            aria-label={`Pass on ${car.name}`}
+                            className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/10 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-400 transition hover:border-white/20 hover:bg-white/4 hover:text-slate-200 sm:flex-none"
+                          >
+                            <ThumbsDown size={18} className="text-slate-500" />
+                            <span className="sm:sr-only">Pass</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCarState(
+                                car.id,
+                                isInTopPicks ? "liked" : "matched",
+                              );
+                            }}
+                            disabled={!isInTopPicks && !canEngageMore}
+                            className={`app-button inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
+                              isInTopPicks
+                                ? "border-white/18 bg-transparent text-slate-100 hover:border-white/35 hover:bg-white/6 hover:text-white"
+                                : canEngageMore
+                                  ? "border-accent bg-accent text-white hover:brightness-110"
+                                  : "cursor-not-allowed border-white/12 bg-white/8 text-slate-500"
+                            }`}
+                          >
+                            <Heart
+                              size={18}
+                              className={
+                                isInTopPicks || canEngageMore
+                                  ? "text-white"
+                                  : "text-slate-500"
+                              }
+                            />
+                            {isInTopPicks
+                              ? "Back to Liked"
+                              : canEngageMore
+                                ? "Top Pick?"
+                                : "Top Pick full"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActiveNotesCarId(car.id)}
+                            className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/18 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/35 hover:bg-white/6 hover:text-white sm:flex-none"
+                          >
+                            <FileText size={18} className="text-slate-200" />
+                            Notes
+                          </button>
+                        </div>
+                      }
+                    />
+                  );
+                })}
+              </div>
             </div>
           </section>
         ) : (
-          <section className="rounded-[28px] border border-dashed border-input bg-panel p-8 text-center shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-            <h2 className="text-2xl font-semibold text-white">
-              Your shortlist is empty
+          <section className="page-panel motion-rise-fade motion-delay-0 rounded-[28px] border border-dashed border-input bg-panel p-8 text-center shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-400">
+              LIKED
+            </p>
+            <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
+              Your Liked Cars
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">
+              These caught your eye—review them before deciding who to engage.
+            </p>
+            <h2 className="mt-6 text-2xl font-semibold text-white">
+              Your liked cars are empty
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Save a few cars in Discover and come back here to compare them.
+              Like a few cars in Discover and come back here to review them.
             </p>
             <Link
               href="/discover"
