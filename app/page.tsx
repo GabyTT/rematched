@@ -36,7 +36,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(225,20,79,0.16),transparent_24%),linear-gradient(180deg,#011118_0%,#000000_44%,#04121a_100%)] text-foreground">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(209,19,58,0.16),transparent_24%),linear-gradient(180deg,#011118_0%,#000000_44%,#04121a_100%)] text-foreground">
       <section>
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-5 py-3 sm:px-8 lg:min-h-[58vh] lg:gap-2 lg:px-10 lg:py-3">
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between lg:gap-0">
@@ -55,7 +55,7 @@ export default function Home() {
               <div className="mt-4 flex flex-col gap-1.5">
                 <Link
                   href="/find-the-one"
-                  className="motion-rise-fade motion-delay-3 card-cta app-button inline-flex min-h-15 w-full items-center justify-center rounded-full border border-[#E1144F] bg-[#E1144F] px-8 py-4 text-base font-semibold text-[#FFFFFF] shadow-[0_18px_40px_rgba(225,20,79,0.28)] hover:brightness-110 sm:w-fit"
+                  className="motion-rise-fade motion-delay-3 card-cta app-button inline-flex min-h-15 w-full items-center justify-center rounded-full border border-[#D1133A] bg-[#D1133A] px-8 py-4 text-base font-semibold text-[#FFFFFF] shadow-[0_18px_40px_rgba(209,19,58,0.28)] hover:brightness-110 sm:w-fit"
                 >
                   Enter Find The One
                 </Link>
@@ -96,10 +96,10 @@ export default function Home() {
             <div className="flex h-full flex-col">
               <div className="max-w-sm flex-1">
                 <div className="mb-5 flex min-h-16 items-center gap-4">
-                  <div className="home-stage-icon-shell inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#40515f] bg-[#2E3C4A] text-[#D7DEE6] shadow-[0_10px_24px_rgba(20,31,40,0.18)] transition-[background-color,border-color,color,transform] duration-300 group-hover:scale-[1.03] group-hover:border-[#E1144F] group-hover:bg-[#E1144F] group-hover:text-white group-focus-within:border-[#E1144F] group-focus-within:bg-[#E1144F] group-focus-within:text-white">
-                    <Heart size={34} strokeWidth={2.2} className="stage-icon" />
+                  <div className="home-stage-icon-shell inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#40515f] bg-[#2E3C4A] text-[#D7DEE6] shadow-[0_10px_24px_rgba(20,31,40,0.18)] transition-[background-color,border-color,color,transform] duration-300 group-hover:scale-[1.03] group-hover:border-[#D1133A] group-hover:bg-[#D1133A] group-hover:text-white group-focus-within:border-[#D1133A] group-focus-within:bg-[#D1133A] group-focus-within:text-white">
+                    <Heart size={34} strokeWidth={0} className="stage-icon fill-current" />
                   </div>
-                  <p className="home-stage-label flex-1 text-left text-[1.3rem] font-semibold uppercase tracking-[0.18em] text-[#2E3C4A] transition-colors duration-300 group-hover:text-[#E1144F] group-focus-within:text-[#E1144F] sm:text-[1.45rem]">
+                  <p className="home-stage-label flex-1 text-left text-[1.3rem] font-semibold uppercase tracking-[0.18em] text-[#2E3C4A] transition-colors duration-300 group-hover:text-[#D1133A] group-focus-within:text-[#D1133A] sm:text-[1.45rem]">
                     FIND THE ONE
                   </p>
                 </div>
@@ -124,10 +124,10 @@ export default function Home() {
             <div className="flex h-full flex-col">
               <div className="flex-1">
                 <div className="mb-5 flex min-h-16 items-center gap-4">
-                  <div className="home-stage-icon-shell inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#40515f] bg-[#2E3C4A] text-[#D7DEE6] shadow-[0_10px_24px_rgba(20,31,40,0.18)] transition-[background-color,border-color,color,transform] duration-300 group-hover:scale-[1.03] group-hover:border-[#E1144F] group-hover:bg-[#E1144F] group-hover:text-white group-focus-within:border-[#E1144F] group-focus-within:bg-[#E1144F] group-focus-within:text-white">
+                  <div className="home-stage-icon-shell inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#40515f] bg-[#2E3C4A] text-[#D7DEE6] shadow-[0_10px_24px_rgba(20,31,40,0.18)] transition-[background-color,border-color,color,transform] duration-300 group-hover:scale-[1.03] group-hover:border-[#D1133A] group-hover:bg-[#D1133A] group-hover:text-white group-focus-within:border-[#D1133A] group-focus-within:bg-[#D1133A] group-focus-within:text-white">
                     <Wrench size={34} strokeWidth={2.2} className="stage-icon" />
                   </div>
-                  <p className="home-stage-label flex-1 text-left text-[1.3rem] font-semibold uppercase tracking-[0.18em] text-[#2E3C4A] transition-colors duration-300 group-hover:text-[#E1144F] group-focus-within:text-[#E1144F] sm:text-[1.45rem]">
+                  <p className="home-stage-label flex-1 text-left text-[1.3rem] font-semibold uppercase tracking-[0.18em] text-[#2E3C4A] transition-colors duration-300 group-hover:text-[#D1133A] group-focus-within:text-[#D1133A] sm:text-[1.45rem]">
                     LIFE TOGETHER
                   </p>
                 </div>
@@ -152,10 +152,10 @@ export default function Home() {
             <div className="flex h-full flex-col">
               <div className="flex-1">
                 <div className="mb-5 flex min-h-16 items-center gap-4">
-                  <div className="home-stage-icon-shell inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#40515f] bg-[#2E3C4A] text-[#D7DEE6] shadow-[0_10px_24px_rgba(20,31,40,0.18)] transition-[background-color,border-color,color,transform] duration-300 group-hover:scale-[1.03] group-hover:border-[#E1144F] group-hover:bg-[#E1144F] group-hover:text-white group-focus-within:border-[#E1144F] group-focus-within:bg-[#E1144F] group-focus-within:text-white">
+                  <div className="home-stage-icon-shell inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#40515f] bg-[#2E3C4A] text-[#D7DEE6] shadow-[0_10px_24px_rgba(20,31,40,0.18)] transition-[background-color,border-color,color,transform] duration-300 group-hover:scale-[1.03] group-hover:border-[#D1133A] group-hover:bg-[#D1133A] group-hover:text-white group-focus-within:border-[#D1133A] group-focus-within:bg-[#D1133A] group-focus-within:text-white">
                     <ArrowRightLeft size={34} strokeWidth={2.2} className="stage-icon" />
                   </div>
-                  <p className="home-stage-label flex-1 text-left text-[1.3rem] font-semibold uppercase tracking-[0.18em] text-[#2E3C4A] transition-colors duration-300 group-hover:text-[#E1144F] group-focus-within:text-[#E1144F] sm:text-[1.45rem]">
+                  <p className="home-stage-label flex-1 text-left text-[1.3rem] font-semibold uppercase tracking-[0.18em] text-[#2E3C4A] transition-colors duration-300 group-hover:text-[#D1133A] group-focus-within:text-[#D1133A] sm:text-[1.45rem]">
                     MOVING ON
                   </p>
                 </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { FileText, Heart, ThumbsDown } from "lucide-react";
+import { FileText, Heart, ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { CarCard } from "@/components/CarCard";
 import { NotesModal } from "@/components/NotesModal";
@@ -39,20 +39,23 @@ export default function LikePage() {
           <section className="page-panel motion-rise-fade motion-delay-0 rounded-[28px] border border-input bg-panel p-5 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="max-w-3xl">
-                <p className="text-sm uppercase tracking-[0.24em] text-slate-400">
-                  LIKED
-                </p>
-                <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
+                <h1 className="flex items-center gap-3 text-3xl font-semibold text-white sm:text-4xl">
+                  <ThumbsUp
+                    size={28}
+                    strokeWidth={0}
+                    className="shrink-0 fill-current text-slate-200"
+                    aria-hidden="true"
+                  />
                   Your Liked Cars
                 </h1>
-                <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">
-                  These caught your eye—review them before deciding who to engage.
+                <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+                  These caught your eye—review them before choosing your top picks.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3 sm:justify-end">
                 <Link
                   href="/match"
-                  className="app-button inline-flex w-fit items-center rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+                  className="app-button inline-flex w-fit items-center rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
                 >
                   {engageCtaText}
                 </Link>
@@ -73,7 +76,7 @@ export default function LikePage() {
                       indicator={
                         carProgress[car.id]?.notes ? (
                           <p className="inline-flex items-center gap-2 text-sm text-slate-300">
-                            <FileText size={16} className="text-slate-300" />
+                            <FileText size={20} strokeWidth={2.4} className="text-slate-300" />
                             Notes added
                           </p>
                         ) : null
@@ -86,7 +89,11 @@ export default function LikePage() {
                             aria-label={`Pass on ${car.name}`}
                             className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/10 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-400 transition hover:border-white/20 hover:bg-white/4 hover:text-slate-200 sm:flex-none"
                           >
-                            <ThumbsDown size={18} className="text-slate-500" />
+                            <ThumbsDown
+                              size={20}
+                              strokeWidth={0}
+                              className="fill-current text-slate-300"
+                            />
                             <span className="sm:sr-only">Pass</span>
                           </button>
                           <button
@@ -107,12 +114,13 @@ export default function LikePage() {
                             }`}
                           >
                             <Heart
-                              size={18}
-                              className={
+                              size={20}
+                              strokeWidth={0}
+                              className={`fill-current ${
                                 isInTopPicks || canEngageMore
                                   ? "text-white"
                                   : "text-slate-500"
-                              }
+                              }`}
                             />
                             {isInTopPicks
                               ? "Back to Liked"
@@ -125,7 +133,7 @@ export default function LikePage() {
                             onClick={() => setActiveNotesCarId(car.id)}
                             className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/18 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/35 hover:bg-white/6 hover:text-white sm:flex-none"
                           >
-                            <FileText size={18} className="text-slate-200" />
+                            <FileText size={20} strokeWidth={2.4} className="text-slate-200" />
                             Notes
                           </button>
                         </div>
@@ -138,19 +146,22 @@ export default function LikePage() {
           </section>
         ) : (
           <section className="page-panel motion-rise-fade motion-delay-0 rounded-[28px] border border-dashed border-input bg-panel p-8 text-center shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-400">
-              LIKED
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
+            <h1 className="flex items-center justify-center gap-3 text-3xl font-semibold text-white sm:text-4xl">
+              <ThumbsUp
+                size={28}
+                strokeWidth={0}
+                className="shrink-0 fill-current text-slate-200"
+                aria-hidden="true"
+              />
               Your Liked Cars
             </h1>
-            <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">
-              These caught your eye—review them before deciding who to engage.
+            <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+              These caught your eye—review them before choosing your top picks.
             </p>
             <h2 className="mt-6 text-2xl font-semibold text-white">
               Your liked cars are empty
             </h2>
-            <p className="mt-3 text-sm leading-6 text-slate-300">
+            <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
               Like a few cars in Discover and come back here to review them.
             </p>
             <Link

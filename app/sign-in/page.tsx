@@ -18,7 +18,7 @@ export default function SignInPage() {
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white">
             Welcome back
           </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
             This MVP entry point marks the session as signed in so returning
             users can skip the guest prompt while you continue testing the flow.
           </p>

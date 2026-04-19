@@ -486,7 +486,7 @@ export default function LifeTogetherPage() {
           <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
             Life Together is where the rubber meets the road.
           </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">
+          <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
             Keep track of what&apos;s due next, what&apos;s been done, and what
             helps your car stay reliable day to day.
           </p>
@@ -528,7 +528,7 @@ export default function LifeTogetherPage() {
                     key={car.id}
                     className={`page-panel relative min-w-72 rounded-[24px] border p-5 transition ${
                       isActive
-                        ? "border-accent bg-accent/10 shadow-[0_18px_40px_rgba(225,20,79,0.14)]"
+                        ? "border-accent bg-accent/10 shadow-[0_18px_40px_rgba(209,19,58,0.14)]"
                         : "border-input bg-input/60"
                     }`}
                   >
@@ -547,7 +547,7 @@ export default function LifeTogetherPage() {
                               {isActive ? "Active car" : "In your garage"}
                             </span>
                             {isActive ? (
-                              <span className="rounded-full border border-accent/50 bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-slate-100">
+                              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-semibold text-slate-200 backdrop-blur-sm transition hover:bg-white/10">
                                 Active
                               </span>
                             ) : null}
@@ -572,7 +572,7 @@ export default function LifeTogetherPage() {
                           className="app-button rounded-full border border-input bg-input px-3 py-2 text-sm text-white transition hover:border-accent"
                           aria-label={`Manage ${car.make} ${car.model}`}
                         >
-                          <MoreHorizontal size={16} />
+                          <MoreHorizontal size={20} strokeWidth={2.4} />
                         </button>
 
                         {openGarageMenuCarId === car.id ? (
@@ -625,7 +625,7 @@ export default function LifeTogetherPage() {
                   ? "No active cars in your garage right now."
                   : "No cars in your garage yet."}
               </h3>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
+              <p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
                 {garageCars.length
                   ? "Add another car to keep Life Together moving in the right direction."
                   : "Add your current car to start tracking the practical side of life together."}
@@ -651,7 +651,7 @@ export default function LifeTogetherPage() {
                 <h2 className="mt-2 text-2xl font-semibold text-white">
                   Stay ahead of the important stuff
                 </h2>
-                <p className="mt-2 text-sm text-slate-300">
+                <p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
                   For this car, here&apos;s what may need attention next.
                 </p>
               </div>
@@ -675,7 +675,7 @@ export default function LifeTogetherPage() {
                               <h3 className="text-lg font-semibold text-white">
                                 {need.title}
                               </h3>
-                              <span className="mt-2 inline-flex rounded-full border border-input bg-input px-3 py-1 text-xs font-medium text-slate-300">
+                              <span className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-semibold text-slate-200 backdrop-blur-sm transition hover:bg-white/10">
                                 {need.status}
                               </span>
                             </div>
@@ -719,7 +719,7 @@ export default function LifeTogetherPage() {
                   <h3 className="text-2xl font-semibold text-white">
                     Nothing urgent right now for this car.
                   </h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-300">
+                  <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
                     You&apos;re in a good spot. Keep the details up to date and
                     check back when something changes.
                   </p>
@@ -753,7 +753,7 @@ export default function LifeTogetherPage() {
                               {entry.date}
                             </p>
                           </div>
-                          <span className="rounded-full border border-input bg-panel px-3 py-1 text-xs font-medium text-slate-300">
+                          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-semibold text-slate-200 backdrop-blur-sm transition hover:bg-white/10">
                             {entry.provider}
                           </span>
                         </div>
@@ -768,7 +768,7 @@ export default function LifeTogetherPage() {
                     <h3 className="text-xl font-semibold text-white">
                       No care history yet for this car.
                     </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">
+                    <p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
                       Start logging services, repairs, and replacements so you
                       can keep a clearer record over time.
                     </p>
@@ -820,7 +820,7 @@ export default function LifeTogetherPage() {
                 ? "No active cars in your garage right now."
                 : "No cars in your garage yet."}
             </h2>
-            <p className="mt-3 text-sm leading-6 text-slate-300">
+            <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
               {garageCars.length
                 ? "Mark another car active or add a new one to keep the ownership flow moving."
                 : "Add your current car to start tracking the practical side of life together."}
@@ -853,7 +853,7 @@ export default function LifeTogetherPage() {
                 <h2 className="mt-2 text-2xl font-semibold text-white">
                   {selectedCar.year} {selectedCar.make} {selectedCar.model}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
+                <p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
                   {activeNeed.providerHelper}
                 </p>
               </div>
@@ -882,14 +882,14 @@ export default function LifeTogetherPage() {
                       </p>
                     </div>
                     {provider.featured ? (
-                      <span className="rounded-full border border-accent/50 bg-accent/10 px-3 py-1 text-xs font-medium text-slate-200">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-semibold text-slate-200 backdrop-blur-sm transition hover:bg-white/10">
                         Featured
                       </span>
                     ) : null}
                   </div>
 
                   <div className="mt-4 flex items-center gap-2 text-sm text-slate-300">
-                    <MapPin size={16} className="text-slate-400" />
+                    <MapPin size={20} strokeWidth={2.4} className="text-slate-300" />
                     {provider.location}
                   </div>
                   <p className="mt-3 text-sm leading-6 text-slate-300">
@@ -907,7 +907,7 @@ export default function LifeTogetherPage() {
                       type="button"
                       className="app-button inline-flex items-center justify-center gap-2 rounded-full border border-input bg-input px-4 py-2.5 text-sm font-semibold text-white transition hover:border-accent"
                     >
-                      <Phone size={16} className="text-slate-300" />
+                      <Phone size={20} strokeWidth={2.4} className="text-slate-300" />
                       Contact / Call
                     </button>
                   </div>
@@ -935,7 +935,7 @@ export default function LifeTogetherPage() {
                 <h2 className="mt-2 text-2xl font-semibold text-white">
                   {drawerCar.year} {drawerCar.make} {drawerCar.model}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
+                <p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
                   Manage the deeper details for this car without leaving Life
                   Together.
                 </p>
@@ -992,7 +992,7 @@ export default function LifeTogetherPage() {
                   </div>
                   <div className="rounded-2xl border border-input bg-input/70 p-4 sm:col-span-2">
                     <p className="text-sm text-slate-400">Status</p>
-                    <span className="mt-2 inline-flex rounded-full border border-input bg-panel px-3 py-1 text-sm font-medium text-slate-200">
+                    <span className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-semibold text-slate-200 backdrop-blur-sm transition hover:bg-white/10">
                       {drawerCar.status === "active" ? "Active" : "Sold"}
                     </span>
                   </div>
@@ -1148,7 +1148,7 @@ export default function LifeTogetherPage() {
                 <h2 className="text-2xl font-semibold text-white">
                   Add your car
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
+                <p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
                   Start tracking the practical side of life together by adding
                   your current car.
                 </p>

@@ -93,7 +93,7 @@ export function Roadmap({ step }: RoadmapProps) {
 
   return (
     <section className="border-b border-white/5 bg-[linear-gradient(180deg,rgba(3,11,17,0.92)_0%,rgba(3,11,17,0.76)_100%)]">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-5 py-5 sm:px-8 lg:px-12 lg:py-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-5 py-3 sm:px-8 lg:px-12 lg:py-4">
         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-400">
           Journey roadmap
         </p>
@@ -131,7 +131,7 @@ export function Roadmap({ step }: RoadmapProps) {
                         : null;
                 const label = item.key === "match" ? topPicksLabel : item.title;
                 const iconShellClasses = isActive
-                  ? "border-[#E7EDF3] bg-[#F7F7F8] text-[#E1144F]"
+                  ? "border-[#E7EDF3] bg-[#F7F7F8] text-[#D1133A]"
                   : isCompleted
                     ? "border-accent bg-accent text-white"
                     : "border-slate-700 bg-[#16212b] text-slate-300";
@@ -151,12 +151,12 @@ export function Roadmap({ step }: RoadmapProps) {
                     <span
                       className={`inline-flex h-[3.5rem] w-[3.5rem] items-center justify-center rounded-full border transition sm:h-[4.5rem] sm:w-[4.5rem] ${iconShellClasses}`}
                     >
-                      <Icon size={24} strokeWidth={2.2} aria-hidden="true" className="sm:h-8 sm:w-8" />
+                      <Icon size={26} strokeWidth={2.4} aria-hidden="true" className="sm:h-8 sm:w-8" />
                     </span>
                     <span className="mt-3 flex items-center justify-center text-[0.92rem] font-semibold uppercase tracking-[0.12em] sm:mt-4 sm:text-[1.12rem] sm:tracking-[0.16em] md:text-[1.2rem]">
                       <span className={titleClasses}>{label}</span>
                       {count !== null ? (
-                        <span className="ml-1.5 inline-flex min-w-8 items-center justify-center rounded-full bg-slate-800 px-2 py-0.5 text-[0.9rem] font-semibold leading-none text-slate-100 sm:ml-2 sm:min-w-10 sm:px-3 sm:py-1 sm:text-[1.02rem] md:text-[1.1rem]">
+                        <span className="ml-1.5 inline-flex min-w-8 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-semibold leading-none text-slate-200 backdrop-blur-sm transition hover:bg-white/10 sm:ml-2 sm:min-w-10 md:text-base">
                           {count}
                         </span>
                       ) : null}

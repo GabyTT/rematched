@@ -18,7 +18,7 @@ export default function SignUpPage() {
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white">
             Unlock alerts
           </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
             This MVP entry point marks the session as signed in so you can keep
             testing the guest gate and follow-up experience without leaving the
             app.

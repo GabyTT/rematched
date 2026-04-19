@@ -23,6 +23,12 @@ type CarProgress = {
   notes: string;
 };
 
+type StoredCarJourneyState = CarJourneyState | "discover" | "none";
+
+type StoredCarProgress = Omit<CarProgress, "state"> & {
+  state: StoredCarJourneyState;
+};
+
 type JourneyContextValue = {
   carProgress: Record<string, CarProgress>;
   compareCarIds: string[];
@@ -31,6 +37,7 @@ type JourneyContextValue = {
   isUnlockAlertsModalOpen: boolean;
   setCarState: (carId: string, state: CarJourneyState) => void;
   resetCarStatuses: () => void;
+  resetJourneyData: () => void;
   updateCarNotes: (carId: string, notes: string) => void;
   toggleCompareCar: (carId: string) => void;
   clearCompareCars: () => void;
@@ -69,7 +76,7 @@ const getStoredPreferences = () => {
     return defaultPreferences;
   }
 
-  const parsed = JSON.parse(savedPreferences) as Partial<Preferences> & {
+  const parsed = JSON.parse(savedPreferences) as Omit<Partial<Preferences>, "brand"> & {
     brand?: string | string[];
   };
   const minBudget =
@@ -122,7 +129,7 @@ const getStoredProgress = () => {
   const savedProgress = window.localStorage.getItem(PROGRESS_KEY);
 
   if (savedProgress) {
-    const parsed = JSON.parse(savedProgress) as Record<string, CarProgress>;
+    const parsed = JSON.parse(savedProgress) as Record<string, StoredCarProgress>;
     const normalized = Object.fromEntries(
       Object.entries(parsed).map(([carId, value]) => [
         carId,
@@ -310,6 +317,12 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const resetJourneyData = () => {
+    resetCarStatuses();
+    setPreferences(defaultPreferences);
+    window.localStorage.removeItem(PREFERENCES_KEY);
+  };
+
   const toggleCompareCar = (carId: string) => {
     setCompareCarIds((current) => {
       const next = current.includes(carId)
@@ -363,6 +376,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
         isUnlockAlertsModalOpen,
         setCarState,
         resetCarStatuses,
+        resetJourneyData,
         updateCarNotes,
         toggleCompareCar,
         clearCompareCars,

@@ -11,7 +11,7 @@ export default function MovingOnPage() {
           <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
             Help your car find its next match.
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+          <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
             When it&apos;s time to move on, RevMatched helps you prepare your car
             for sale, create a stronger listing, and place it in front of
             buyers already looking for the right fit.

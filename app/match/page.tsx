@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Heart } from "lucide-react";
 
 import { CarDetailsModal } from "@/components/CarDetailsModal";
 import { CompareTable } from "@/components/CompareTable";
@@ -44,14 +45,17 @@ export default function MatchPage() {
           <section className="page-panel motion-rise-fade motion-delay-0 rounded-[28px] border border-input bg-panel p-5 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="max-w-3xl">
-                <p className="text-sm uppercase tracking-[0.24em] text-slate-400">
-                  ENGAGE
-                </p>
-                <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
-                  Compare your finalists
+                <h1 className="flex items-center gap-3 text-3xl font-semibold text-white sm:text-4xl">
+                  <Heart
+                    size={28}
+                    strokeWidth={0}
+                    className="shrink-0 fill-current text-slate-200"
+                    aria-hidden="true"
+                  />
+                  Compare Top Picks
                 </h1>
-                <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">
-                  See your engaged cars side by side so the final decision feels clearer.
+                <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+                  See your top picks side by side to choose the right one.
                 </p>
               </div>
               <Link
@@ -82,20 +86,23 @@ export default function MatchPage() {
           </section>
         ) : (
           <section className="page-panel motion-rise-fade motion-delay-0 rounded-[28px] border border-dashed border-input bg-panel p-8 text-center shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-400">
-              ENGAGE
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
-              Compare your finalists
+            <h1 className="flex items-center justify-center gap-3 text-3xl font-semibold text-white sm:text-4xl">
+              <Heart
+                size={28}
+                strokeWidth={0}
+                className="shrink-0 fill-current text-slate-200"
+                aria-hidden="true"
+              />
+              Compare Top Picks
             </h1>
-            <p className="mt-3 text-sm leading-6 text-slate-300 sm:text-base">
-              See your engaged cars side by side so the final decision feels clearer.
+            <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+              See your top picks side by side to choose the right one.
             </p>
             <h2 className="mt-6 text-2xl font-semibold text-white">
-              No cars in Engage yet
+              No Top Picks yet
             </h2>
-            <p className="mt-3 text-sm leading-6 text-slate-300">
-              Move up to 3 cars from Liked into Engage to compare them side by side.
+            <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+              Move up to 3 cars from Liked into Top Picks to compare them side by side.
             </p>
             <Link
               href="/like"

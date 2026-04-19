@@ -33,7 +33,7 @@ export function CarCard({
       ? {
           label: "Liked",
           icon: ThumbsUp,
-          iconClassName: "text-[#E1144F]",
+          iconClassName: "text-[#D1133A]",
           pillClassName:
             "border-transparent bg-white text-[#111827] shadow-[0_8px_18px_rgba(0,0,0,0.18)]",
           cardStateClassName: "card-status-liked",
@@ -51,7 +51,7 @@ export function CarCard({
           ? {
               label: topPickCount === 1 ? "The One" : "Top Pick",
               icon: Heart,
-              iconClassName: "text-[#E1144F]",
+              iconClassName: "text-[#D1133A]",
               pillClassName:
                 "border-transparent bg-white text-[#111827] shadow-[0_8px_18px_rgba(0,0,0,0.18)]",
               cardStateClassName:
@@ -88,12 +88,12 @@ export function CarCard({
             {imageBadge}
             {statusConfig && StatusIcon ? (
               <span
-                className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold leading-none ${statusConfig.pillClassName}`}
+                className={`inline-flex min-h-9 items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold leading-none backdrop-blur-sm transition hover:bg-white/10 ${statusConfig.pillClassName}`}
               >
                 <StatusIcon
-                  size={14}
-                  strokeWidth={2.2}
-                  className={statusConfig.iconClassName}
+                  size={20}
+                  strokeWidth={0}
+                  className={`fill-current ${statusConfig.iconClassName}`}
                 />
                 {statusConfig.label}
               </span>
@@ -104,10 +104,10 @@ export function CarCard({
 
       <div className={`space-y-4 ${isLight ? "p-5" : "p-5"}`}>
         <span
-          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+          className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/10 ${
             isLight
-              ? "border border-[#D9E0E7] bg-white text-[#6B7A89]"
-              : "border border-input bg-input text-slate-300"
+              ? "border border-[#D9E0E7] bg-white/90 text-[#314154]"
+              : "border border-white/10 bg-white/5 text-slate-200"
           }`}
         >
           {category}

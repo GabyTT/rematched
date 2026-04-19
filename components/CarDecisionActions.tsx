@@ -45,8 +45,9 @@ export function CarDecisionActions({
         }`}
       >
         <ThumbsDown
-          size={18}
-          className={isLight ? "text-[#6B7A89]" : "text-slate-500"}
+          size={20}
+          strokeWidth={0}
+          className={`fill-current ${isLight ? "text-[#6B7A89]" : "text-slate-300"}`}
         />
         Pass
       </button>
@@ -55,7 +56,11 @@ export function CarDecisionActions({
         onClick={primaryAction}
         className={`app-button inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition ${primaryClassName}`}
       >
-        <PrimaryIcon size={18} className={primaryIconClassName} />
+        <PrimaryIcon
+          size={20}
+          strokeWidth={0}
+          className={`fill-current ${primaryIconClassName}`}
+        />
         {primaryLabel}
       </button>
     </div>

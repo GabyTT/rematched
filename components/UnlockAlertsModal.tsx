@@ -24,19 +24,19 @@ export function UnlockAlertsModal({
         onClick={onClose}
         aria-label="Close unlock alerts modal"
       />
-      <div className="relative z-10 w-full max-w-xl rounded-[32px] border border-accent/30 bg-[radial-gradient(circle_at_top,rgba(236,53,110,0.18),transparent_36%),linear-gradient(180deg,rgba(1,17,24,0.98)_0%,rgba(0,0,0,0.98)_100%)] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.48)] sm:p-7">
+      <div className="relative z-10 w-full max-w-xl rounded-[32px] border border-accent/30 bg-[radial-gradient(circle_at_top,rgba(209,19,58,0.18),transparent_36%),linear-gradient(180deg,rgba(1,17,24,0.98)_0%,rgba(0,0,0,0.98)_100%)] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.48)] sm:p-7">
         <button
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 inline-flex rounded-full border border-input bg-input p-2 text-slate-300 transition hover:border-accent hover:text-white"
           aria-label="Dismiss modal"
         >
-          <X size={18} />
+          <X size={20} strokeWidth={2.4} />
         </button>
 
         <div className="max-w-lg">
-          <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-200">
-            <BellRing size={14} />
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-semibold uppercase tracking-wide text-slate-200 backdrop-blur-sm transition hover:bg-white/10">
+            <BellRing size={20} strokeWidth={2.4} />
             Guest browsing
           </span>
           <h2 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl">

@@ -136,19 +136,19 @@ function HelperStepHeader({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#c4d0da] bg-[#eef3f7] text-[#2E3C4A] transition hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#c4d0da] bg-[#eef3f7] text-[#2E3C4A] transition hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
           aria-label="Go to previous question"
         >
-          <ArrowLeft size={18} strokeWidth={2.1} />
+          <ArrowLeft size={20} strokeWidth={2.4} />
         </button>
       ) : onClose ? (
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#c4d0da] bg-[#eef3f7] text-[#2E3C4A] transition hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#c4d0da] bg-[#eef3f7] text-[#2E3C4A] transition hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
           aria-label="Close helper"
         >
-          <X size={18} strokeWidth={2.1} />
+          <X size={20} strokeWidth={2.4} />
         </button>
       ) : null}
       <p className="text-[1.3rem] font-semibold uppercase tracking-[0.18em] text-[#2E3C4A] sm:text-[1.45rem]">
@@ -464,23 +464,37 @@ export function FindTheOnePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(225,20,79,0.16),transparent_24%),linear-gradient(180deg,#011118_0%,#000000_44%,#04121a_100%)] text-foreground">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(209,19,58,0.16),transparent_24%),linear-gradient(180deg,#011118_0%,#000000_44%,#04121a_100%)] text-foreground">
       <div className="mx-auto grid w-full max-w-7xl gap-6 px-5 py-5 sm:px-8 lg:grid-cols-[1.18fr_0.82fr] lg:px-12 lg:py-6">
         <section className="page-panel motion-rise-fade motion-delay-1 rounded-[32px] border border-[#d9e0e7] bg-white p-6 text-[#17212b] shadow-[0_8px_24px_rgba(0,0,0,0.15)] sm:p-8">
           <div>
-            <div className="flex items-center gap-4">
-              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#40515f] bg-[#2E3C4A] text-[#D7DEE6]">
-                <SlidersHorizontal size={24} strokeWidth={2.2} />
-              </span>
-              <p className="text-[1.12rem] font-semibold uppercase tracking-[0.16em] text-[#2E3C4A] sm:text-[1.2rem]">
-                DEFINE
-              </p>
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <SlidersHorizontal
+                  size={28}
+                  strokeWidth={2.4}
+                  className="shrink-0 text-[#2E3C4A]"
+                  aria-hidden="true"
+                />
+                <h2 className="text-2xl font-semibold leading-tight text-[#17212b] sm:text-[2rem]">
+                  Define What Matters
+                </h2>
+              </div>
+              <button
+                type="submit"
+                form="define-preferences-form"
+                data-dirty={isDirty ? "true" : "false"}
+                data-pop={isDirtyPopActive ? "true" : "false"}
+                className={`app-button inline-flex items-center justify-center rounded-full border border-transparent bg-accent px-5 py-2 text-sm font-semibold text-white transition duration-200 hover:scale-[1.02] hover:brightness-110 md:text-base ${
+                  isDirty ? "save-discover-dirty" : ""
+                } ${isDirtyPopActive ? "save-discover-pop" : ""}`}
+                disabled={isSubmitting || !budgetRangeIsValid}
+              >
+                {isSubmitting ? "Opening Discover..." : "Save and Discover"}
+              </button>
             </div>
-            <div className="mt-4">
-              <h2 className="text-2xl font-semibold leading-tight text-[#17212b] sm:text-[2rem]">
-                What are you looking for?
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-[#536a7d] sm:text-base">
+            <div>
+              <p className="mt-3 max-w-2xl text-base leading-relaxed text-[#425466] md:text-lg">
                 Tell us what matters—we&apos;ll find your matches.
               </p>
             </div>
@@ -492,7 +506,11 @@ export function FindTheOnePage() {
             </p>
           ) : null}
 
-          <form onSubmit={handleSubmit} className="mt-8 grid gap-5 md:grid-cols-2">
+          <form
+            id="define-preferences-form"
+            onSubmit={handleSubmit}
+            className="mt-8 grid gap-5 md:grid-cols-2"
+          >
             <div className="md:col-span-2 grid gap-4 md:grid-cols-2">
               <label className="block">
                 <span className={formLabelClassName}>
@@ -566,7 +584,7 @@ export function FindTheOnePage() {
               </span>
               <div className="rounded-[24px] border border-[#d9e0e7] bg-[#f5f7fa] p-4">
                 <div className="flex min-h-16 items-center gap-3 rounded-[20px] border border-[#d9e0e7] bg-white px-4">
-                  <SearchIcon size={16} className="text-[#7d8f9d]" />
+                  <SearchIcon size={20} strokeWidth={2.4} className="text-[#7d8f9d]" />
                   <input
                     value={brandQuery}
                     onChange={(event) => setBrandQuery(event.target.value)}
@@ -583,10 +601,10 @@ export function FindTheOnePage() {
                           key={brand}
                           type="button"
                           onClick={() => toggleBrand(brand)}
-                          className="nav-pill inline-flex items-center gap-2 rounded-full border border-accent bg-accent px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white"
+                          className="nav-pill inline-flex items-center gap-2 rounded-full border border-accent bg-accent px-4 py-1.5 text-sm font-semibold whitespace-nowrap text-white backdrop-blur-sm"
                         >
                           {brand}
-                          <X size={14} />
+                          <X size={20} strokeWidth={2.4} />
                         </button>
                       ))}
                     </div>
@@ -620,7 +638,7 @@ export function FindTheOnePage() {
                             key={brand}
                             type="button"
                             onClick={() => toggleBrand(brand)}
-                            className="nav-pill inline-flex min-h-11 items-center rounded-full border border-[#d9e0e7] bg-white px-4 py-2 text-sm font-medium whitespace-nowrap text-[#314154] transition hover:border-accent"
+                            className="nav-pill inline-flex min-h-11 items-center gap-2 rounded-full border border-[#d9e0e7] bg-white px-4 py-2 text-sm font-semibold whitespace-nowrap text-[#314154] transition hover:border-accent"
                           >
                             {brand}
                           </button>
@@ -637,19 +655,6 @@ export function FindTheOnePage() {
               </div>
             </label>
 
-            <div className="md:col-span-2 flex flex-col gap-3 sm:flex-row">
-              <button
-                type="submit"
-                data-dirty={isDirty ? "true" : "false"}
-                data-pop={isDirtyPopActive ? "true" : "false"}
-                className={`app-button inline-flex min-h-16 items-center justify-center rounded-full border border-transparent bg-accent px-8 text-base font-semibold text-white transition duration-200 hover:brightness-110 ${
-                  isDirty ? "save-discover-dirty" : ""
-                } ${isDirtyPopActive ? "save-discover-pop" : ""}`}
-                disabled={isSubmitting || !budgetRangeIsValid}
-              >
-                {isSubmitting ? "Opening Discover..." : "Save and Discover"}
-              </button>
-            </div>
           </form>
         </section>
 
@@ -678,10 +683,10 @@ export function FindTheOnePage() {
             {helperStep === "intro" ? (
               <div>
                 <div className="inline-flex w-full items-center gap-3">
-                  <span className="home-stage-icon-shell inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#40515f] bg-[#2E3C4A] text-[#D7DEE6] transition-[background-color,border-color,color,transform] duration-300 group-hover:scale-[1.03] group-hover:border-[#E1144F] group-hover:bg-[#E1144F] group-hover:text-white group-focus-within:border-[#E1144F] group-focus-within:bg-[#E1144F] group-focus-within:text-white">
-                    <CarFront size={18} strokeWidth={2.1} className="stage-icon" />
+                  <span className="home-stage-icon-shell inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#40515f] bg-[#2E3C4A] text-[#D7DEE6] transition-[background-color,border-color,color,transform] duration-300 group-hover:scale-[1.03] group-hover:border-[#D1133A] group-hover:bg-[#D1133A] group-hover:text-white group-focus-within:border-[#D1133A] group-focus-within:bg-[#D1133A] group-focus-within:text-white">
+                    <CarFront size={20} strokeWidth={2.4} className="stage-icon" />
                   </span>
-                  <p className="home-stage-label flex-1 text-[1.12rem] font-semibold uppercase tracking-[0.16em] text-slate-200 transition-colors duration-300 group-hover:text-[#E1144F] group-focus-within:text-[#E1144F] sm:text-[1.2rem]">
+                  <p className="home-stage-label flex-1 text-[1.12rem] font-semibold uppercase tracking-[0.16em] text-slate-200 transition-colors duration-300 group-hover:text-[#D1133A] group-focus-within:text-[#D1133A] sm:text-[1.2rem]">
                     Need help with Car Type?
                   </p>
                 </div>
@@ -689,7 +694,7 @@ export function FindTheOnePage() {
                   Answer 2 quick questions and we&apos;ll suggest a good starting
                   point for your search.
                 </p>
-                <div className="mt-7 flex justify-end text-slate-400 transition-colors duration-300 group-hover:text-[#E1144F]">
+                <div className="mt-7 flex justify-end text-slate-400 transition-colors duration-300 group-hover:text-[#D1133A]">
                   <span className="text-sm font-semibold uppercase tracking-[0.14em]">
                     Start quick guide
                   </span>
@@ -716,7 +721,7 @@ export function FindTheOnePage() {
                       setBuyerPriority("practicality");
                       setHelperStep("question-2");
                     }}
-                    className="app-button inline-flex min-h-16 justify-center rounded-[22px] border border-[#c4d0da] bg-[#eef3f7] px-5 py-4 text-base font-semibold text-[#1c3141] transition hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+                    className="app-button inline-flex min-h-16 justify-center rounded-[22px] border border-[#c4d0da] bg-[#eef3f7] px-5 py-4 text-base font-semibold text-[#1c3141] transition hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
                   >
                     Practicality and value
                   </button>
@@ -726,7 +731,7 @@ export function FindTheOnePage() {
                       setBuyerPriority("style");
                       setHelperStep("question-2");
                     }}
-                    className="app-button inline-flex min-h-16 justify-center rounded-[22px] border border-[#c4d0da] bg-[#eef3f7] px-5 py-4 text-base font-semibold text-[#1c3141] transition hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+                    className="app-button inline-flex min-h-16 justify-center rounded-[22px] border border-[#c4d0da] bg-[#eef3f7] px-5 py-4 text-base font-semibold text-[#1c3141] transition hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
                   >
                     Style and presence
                   </button>
@@ -756,7 +761,7 @@ export function FindTheOnePage() {
                       setBuyerNeed("easy");
                       setHelperStep("result");
                     }}
-                    className="app-button inline-flex min-h-16 justify-center rounded-[22px] border border-[#c4d0da] bg-[#eef3f7] px-5 py-4 text-base font-semibold text-[#1c3141] transition hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+                    className="app-button inline-flex min-h-16 justify-center rounded-[22px] border border-[#c4d0da] bg-[#eef3f7] px-5 py-4 text-base font-semibold text-[#1c3141] transition hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
                   >
                     Something easier to park and move around
                   </button>
@@ -766,7 +771,7 @@ export function FindTheOnePage() {
                       setBuyerNeed("room");
                       setHelperStep("result");
                     }}
-                    className="app-button inline-flex min-h-16 justify-center rounded-[22px] border border-[#c4d0da] bg-[#eef3f7] px-5 py-4 text-base font-semibold text-[#1c3141] transition hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+                    className="app-button inline-flex min-h-16 justify-center rounded-[22px] border border-[#c4d0da] bg-[#eef3f7] px-5 py-4 text-base font-semibold text-[#1c3141] transition hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
                   >
                     More room for people or things
                   </button>
@@ -814,7 +819,7 @@ export function FindTheOnePage() {
                   <button
                     type="button"
                     onClick={resetHelper}
-                    className="app-button inline-flex justify-center rounded-full border border-[#8198ab] bg-[#e3edf5] px-6 py-3.5 text-sm font-semibold text-[#1c3141] transition hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+                    className="app-button inline-flex justify-center rounded-full border border-[#8198ab] bg-[#e3edf5] px-6 py-3.5 text-sm font-semibold text-[#1c3141] transition hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
                   >
                     Close
                   </button>
@@ -847,17 +852,17 @@ export function FindTheOnePage() {
             {budgetHelperStep === "intro" ? (
               <div>
                 <div className="inline-flex w-full items-center gap-3">
-                  <span className="home-stage-icon-shell inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#40515f] bg-[#2E3C4A] text-[#D7DEE6] transition-[background-color,border-color,color,transform] duration-300 group-hover:scale-[1.03] group-hover:border-[#E1144F] group-hover:bg-[#E1144F] group-hover:text-white group-focus-within:border-[#E1144F] group-focus-within:bg-[#E1144F] group-focus-within:text-white">
-                    <DollarSign size={18} strokeWidth={2.1} className="stage-icon" />
+                  <span className="home-stage-icon-shell inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#40515f] bg-[#2E3C4A] text-[#D7DEE6] transition-[background-color,border-color,color,transform] duration-300 group-hover:scale-[1.03] group-hover:border-[#D1133A] group-hover:bg-[#D1133A] group-hover:text-white group-focus-within:border-[#D1133A] group-focus-within:bg-[#D1133A] group-focus-within:text-white">
+                    <DollarSign size={20} strokeWidth={2.4} className="stage-icon" />
                   </span>
-                  <p className="home-stage-label flex-1 text-[1.12rem] font-semibold uppercase tracking-[0.16em] text-slate-200 transition-colors duration-300 group-hover:text-[#E1144F] group-focus-within:text-[#E1144F] sm:text-[1.2rem]">
+                  <p className="home-stage-label flex-1 text-[1.12rem] font-semibold uppercase tracking-[0.16em] text-slate-200 transition-colors duration-300 group-hover:text-[#D1133A] group-focus-within:text-[#D1133A] sm:text-[1.2rem]">
                     Need help with budget?
                   </p>
                 </div>
                 <h2 className="mt-6 text-2xl font-semibold leading-tight text-white">
                   Start with the monthly payment you can live with
                 </h2>
-                <div className="mt-7 flex justify-end text-slate-400 transition-colors duration-300 group-hover:text-[#E1144F]">
+                <div className="mt-7 flex justify-end text-slate-400 transition-colors duration-300 group-hover:text-[#D1133A]">
                   <span className="text-sm font-semibold uppercase tracking-[0.14em]">
                     Start budget helper
                   </span>
@@ -903,7 +908,7 @@ export function FindTheOnePage() {
                             amount.toLocaleString("en-US"),
                           )
                         }
-                        className="nav-pill inline-flex min-h-11 rounded-full border border-[#c4d0da] bg-[#eef3f7] px-4 py-2 text-sm font-medium text-[#1c3141] hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+                        className="nav-pill inline-flex min-h-11 rounded-full border border-[#c4d0da] bg-[#eef3f7] px-4 py-2 text-sm font-medium text-[#1c3141] hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
                       >
                         {formatCurrency(amount)}
                       </button>
@@ -933,7 +938,7 @@ export function FindTheOnePage() {
                   <button
                     type="button"
                     onClick={resetBudgetHelper}
-                    className="app-button inline-flex justify-center rounded-full border border-[#8198ab] bg-[#e3edf5] px-6 py-3.5 text-sm font-semibold text-[#1c3141] transition hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+                    className="app-button inline-flex justify-center rounded-full border border-[#8198ab] bg-[#e3edf5] px-6 py-3.5 text-sm font-semibold text-[#1c3141] transition hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
                   >
                     Close
                   </button>
@@ -981,7 +986,7 @@ export function FindTheOnePage() {
                   <button
                     type="button"
                     onClick={() => setBudgetHelperStep("question-1")}
-                    className="app-button inline-flex justify-center rounded-full border border-[#8198ab] bg-[#e3edf5] px-6 py-3.5 text-sm font-semibold text-[#1c3141] transition hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+                    className="app-button inline-flex justify-center rounded-full border border-[#8198ab] bg-[#e3edf5] px-6 py-3.5 text-sm font-semibold text-[#1c3141] transition hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
                   >
                     Back
                   </button>
@@ -1023,10 +1028,10 @@ export function FindTheOnePage() {
                       key={term}
                       type="button"
                       onClick={() => setLoanTermYears(term)}
-                      className={`nav-pill inline-flex rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                      className={`nav-pill inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
                         loanTermYears === term
                           ? "border-accent bg-accent text-white"
-                          : "border-[#c4d0da] bg-[#eef3f7] text-[#1c3141] hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+                          : "border-[#c4d0da] bg-[#eef3f7] text-[#1c3141] hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
                       }`}
                     >
                       {term} years
@@ -1044,7 +1049,7 @@ export function FindTheOnePage() {
                   <button
                     type="button"
                     onClick={() => setBudgetHelperStep("question-2")}
-                    className="app-button inline-flex justify-center rounded-full border border-[#8198ab] bg-[#e3edf5] px-6 py-3.5 text-sm font-semibold text-[#1c3141] transition hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+                    className="app-button inline-flex justify-center rounded-full border border-[#8198ab] bg-[#e3edf5] px-6 py-3.5 text-sm font-semibold text-[#1c3141] transition hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
                   >
                     Back
                   </button>
@@ -1105,7 +1110,7 @@ export function FindTheOnePage() {
                   <button
                     type="button"
                     onClick={() => setBudgetHelperStep("question-3")}
-                    className="app-button inline-flex justify-center rounded-full border border-[#8198ab] bg-[#e3edf5] px-6 py-3.5 text-sm font-semibold text-[#1c3141] transition hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+                    className="app-button inline-flex justify-center rounded-full border border-[#8198ab] bg-[#e3edf5] px-6 py-3.5 text-sm font-semibold text-[#1c3141] transition hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
                   >
                     Back
                   </button>
@@ -1191,7 +1196,7 @@ export function FindTheOnePage() {
                   <button
                     type="button"
                     onClick={resetBudgetHelper}
-                    className="app-button inline-flex justify-center rounded-full border border-[#8198ab] bg-[#e3edf5] px-6 py-3.5 text-sm font-semibold text-[#1c3141] transition hover:border-[#E1144F] hover:bg-[#E1144F] hover:text-white"
+                    className="app-button inline-flex justify-center rounded-full border border-[#8198ab] bg-[#e3edf5] px-6 py-3.5 text-sm font-semibold text-[#1c3141] transition hover:border-[#D1133A] hover:bg-[#D1133A] hover:text-white"
                   >
                     Close
                   </button>

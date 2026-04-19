@@ -33,7 +33,8 @@ export function CarBrowseActions({
         }`}
       >
         <Eye
-          size={18}
+          size={20}
+          strokeWidth={2.4}
           className={isLight ? "text-[#6B7A89]" : "text-slate-200"}
         />
         View details

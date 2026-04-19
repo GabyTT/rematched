@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useJourney } from "@/components/JourneyProvider";
 
 export default function ProfilePage() {
-  const { resetCarStatuses } = useJourney();
+  const { resetJourneyData } = useJourney();
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -17,7 +17,7 @@ export default function ProfilePage() {
           <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
             Your preferences and journey settings.
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+          <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
             Profile is ready for future account details, saved settings, and
             personalization controls. Your current journey preferences continue
             to power Find The One.
@@ -30,10 +30,10 @@ export default function ProfilePage() {
           </Link>
           <button
             type="button"
-            onClick={resetCarStatuses}
+            onClick={resetJourneyData}
             className="app-button mt-3 inline-flex rounded-full border border-input bg-input px-5 py-3 text-sm font-semibold text-white transition hover:border-accent"
           >
-            Reset cars
+            Reset journey
           </button>
         </section>
       </div>

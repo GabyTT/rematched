@@ -22,6 +22,7 @@ type SwipeDirection = "left" | "right" | "up" | "down";
 
 type TinderCardHandle = {
   swipe: (direction?: SwipeDirection) => Promise<void>;
+  restoreCard: () => Promise<void>;
 };
 
 export function SwipeDeck({
@@ -130,7 +131,7 @@ export function SwipeDeck({
             <h3 className="text-xl font-semibold text-white">
               You reached the end of your matches
             </h3>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
+            <p className="mt-2 text-base leading-6 text-slate-300/90">
               Try another range to refresh the deck, or browse the full
               marketplace below.
             </p>
@@ -160,11 +161,11 @@ export function SwipeDeck({
             />
           </div>
         </div>
-        <div className="flex gap-2 text-sm text-slate-300">
-          <span className="rounded-full border border-input bg-input px-3 py-1.5">
+        <div className="flex gap-2 text-sm text-slate-200">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 font-semibold backdrop-blur-sm transition hover:bg-white/10">
             Remaining {cars.length}
           </span>
-          <span className="rounded-full border border-input bg-input px-3 py-1.5">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 font-semibold backdrop-blur-sm transition hover:bg-white/10">
             Saved {likedCount}
           </span>
         </div>
@@ -197,7 +198,6 @@ export function SwipeDeck({
                   swipeRequirementType="position"
                   swipeThreshold={35}
                   className="col-start-1 row-start-1"
-                  style={{ touchAction: "pan-y" }}
                 >
                   <div
                     className={`${
@@ -207,6 +207,7 @@ export function SwipeDeck({
                       transform: `${buttonSwipeDirection && isTopCard ? `translateX(${buttonSwipeDirection === "right" ? "42px" : "-42px"}) rotate(${buttonSwipeDirection === "right" ? "8deg" : "-8deg"}) ` : ""}translateY(${stackOffset * 12}px) scale(${1 - stackOffset * 0.02})`,
                       transitionDuration:
                         buttonSwipeDirection && isTopCard ? "140ms" : undefined,
+                      touchAction: "pan-y",
                     }}
                   >
                     {isTopCard && swipeDirection === "right" ? (
@@ -229,7 +230,11 @@ export function SwipeDeck({
                             onClick={() => triggerButtonSwipe("left")}
                             className="pointer-events-auto inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-[#D9E0E7] bg-white px-4 py-2.5 text-sm font-semibold text-[#16212B] transition duration-200 hover:border-accent"
                           >
-                            <ThumbsDown size={18} className="text-[#6B7A89]" />
+                            <ThumbsDown
+                              size={20}
+                              strokeWidth={0}
+                              className="fill-current text-[#6B7A89]"
+                            />
                             Pass
                           </button>
                           <button
@@ -237,7 +242,11 @@ export function SwipeDeck({
                             onClick={() => triggerButtonSwipe("right")}
                             className="pointer-events-auto inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-accent bg-accent px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:brightness-110"
                           >
-                            <ThumbsUp size={18} className="text-white" />
+                            <ThumbsUp
+                              size={20}
+                              strokeWidth={0}
+                              className="fill-current text-white"
+                            />
                             Like
                           </button>
                         </div>

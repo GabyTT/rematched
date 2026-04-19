@@ -85,7 +85,7 @@ export function CompareTable({
                         onClick={() => onViewDetails(car.id)}
                         className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/18 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/35 hover:bg-white/6 hover:text-white"
                       >
-                        <Eye size={18} className="text-slate-200" />
+                        <Eye size={20} strokeWidth={2.4} className="text-slate-200" />
                         View details
                       </button>
                       <button
@@ -93,7 +93,7 @@ export function CompareTable({
                         onClick={() => onOpenNotes(car.id)}
                         className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/18 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/35 hover:bg-white/6 hover:text-white"
                       >
-                        <FileText size={18} className="text-slate-200" />
+                        <FileText size={20} strokeWidth={2.4} className="text-slate-200" />
                         Notes
                       </button>
                       <button
@@ -101,16 +101,16 @@ export function CompareTable({
                         onClick={() => onRemoveFromEngage(car.id)}
                         className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/10 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-400 transition hover:border-white/20 hover:bg-white/4 hover:text-slate-200"
                       >
-                        <X size={18} className="text-slate-500" />
+                        <X size={20} strokeWidth={2.4} className="text-slate-300" />
                         Remove
                       </button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex min-h-[22rem] flex-col items-center justify-center rounded-[20px] border border-dashed border-white/10 bg-white/[0.02] px-5 text-center">
-                    <p className="text-base font-semibold text-white">Add another finalist</p>
+                    <p className="text-base font-semibold text-white">Add another top pick</p>
                     <p className="mt-2 text-sm leading-6 text-slate-400">
-                      Engage another car to compare up to 3 finalists side by side.
+                      Add another car to compare up to 3 top picks side by side.
                     </p>
                   </div>
                 )}
