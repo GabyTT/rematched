@@ -49,15 +49,11 @@ body {
 
 .home-hero-visual {
   max-height: 32rem;
-  box-shadow:
-    0 18px 42px rgba(0, 0, 0, 0.24),
-    0 0 0 1px rgba(255, 255, 255, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .home-hero-image {
   max-height: 32rem;
-  object-position: 58% 32%;
+  object-position: 62% 38%;
 }
 
 @media (max-width: 1023px) {
@@ -192,8 +188,14 @@ body {
     0 0 58px rgba(209, 19, 58, 0.16);
 }
 
+.save-discover-idle:hover {
+  box-shadow:
+    0 14px 30px rgba(49, 65, 84, 0.2),
+    0 0 16px rgba(129, 152, 171, 0.12);
+}
+
 .save-discover-pop {
-  animation: saveDiscoverPop 440ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: saveDiscoverShake 720ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .card-cta:hover {
@@ -240,17 +242,33 @@ body {
   }
 }
 
-@keyframes saveDiscoverPop {
+@keyframes saveDiscoverShake {
   0% {
-    transform: scale(1);
+    transform: translateX(0) rotate(0deg);
   }
 
-  55% {
-    transform: scale(1.05);
+  15% {
+    transform: translateX(-5px) rotate(-1deg);
+  }
+
+  30% {
+    transform: translateX(5px) rotate(1deg);
+  }
+
+  45% {
+    transform: translateX(-4px) rotate(-0.8deg);
+  }
+
+  60% {
+    transform: translateX(4px) rotate(0.8deg);
+  }
+
+  75% {
+    transform: translateX(-2px) rotate(-0.4deg);
   }
 
   100% {
-    transform: scale(1);
+    transform: translateX(0) rotate(0deg);
   }
 }
 
@@ -301,6 +319,18 @@ body {
   .save-discover-pop {
     animation: none;
   }
+
+  .swipe-card-nudge {
+    animation: none;
+  }
+
+  .roadmap-liked-pulse {
+    animation: none;
+  }
+
+  .roadmap-liked-connector-fill {
+    animation: none;
+  }
 }
 
 .swipe-card {
@@ -312,6 +342,24 @@ body {
 
 .swipe-card:active {
   cursor: grabbing;
+}
+
+.swipe-card-nudge {
+  animation: swipeCardNudge 560ms ease-in-out;
+  will-change: transform;
+}
+
+.roadmap-liked-pulse {
+  animation: roadmapLikedPulse 1900ms ease-in-out;
+  will-change: transform, filter, box-shadow;
+}
+
+.roadmap-liked-connector-fill {
+  width: 100%;
+  animation: roadmapLikedConnectorFill 1900ms ease-in-out;
+  box-shadow: 0 0 14px rgba(209, 19, 58, 0.44);
+  transform-origin: left center;
+  will-change: opacity, transform, box-shadow;
 }
 
 .swipe-card * {
@@ -327,6 +375,95 @@ body {
 .swipe-card img {
   pointer-events: none;
   -webkit-user-drag: none;
+}
+
+@keyframes swipeCardNudge {
+  0% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-5px);
+  }
+
+  45% {
+    transform: translateX(5px);
+  }
+
+  70% {
+    transform: translateX(-3px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes roadmapLikedPulse {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+    box-shadow: 0 0 0 rgba(209, 19, 58, 0);
+  }
+
+  28% {
+    transform: scale(1.08);
+    filter: brightness(1.28);
+    box-shadow:
+      0 0 0 7px rgba(209, 19, 58, 0.24),
+      0 0 36px rgba(209, 19, 58, 0.58),
+      0 0 62px rgba(209, 19, 58, 0.22);
+  }
+
+  58% {
+    transform: scale(1.055);
+    filter: brightness(1.18);
+    box-shadow:
+      0 0 0 11px rgba(209, 19, 58, 0.16),
+      0 0 42px rgba(209, 19, 58, 0.42),
+      0 0 72px rgba(209, 19, 58, 0.16);
+  }
+
+  82% {
+    transform: scale(1.025);
+    filter: brightness(1.08);
+    box-shadow:
+      0 0 0 15px rgba(209, 19, 58, 0.07),
+      0 0 28px rgba(209, 19, 58, 0.22);
+  }
+
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+    box-shadow: 0 0 0 rgba(209, 19, 58, 0);
+  }
+}
+
+@keyframes roadmapLikedConnectorFill {
+  0% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+
+  12% {
+    opacity: 1;
+    transform: scaleX(0);
+  }
+
+  48% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  72% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
 }
 
 .scrollbar-hidden {

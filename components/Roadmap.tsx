@@ -1,6 +1,7 @@
 "use client";
 
 import type { MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Heart,
@@ -50,7 +51,21 @@ const roadmapSteps = [
 export function Roadmap({ step }: RoadmapProps) {
   const mounted = useMounted();
   const { carProgress, preferences } = useJourney();
+  const [isLikedPulseActive, setIsLikedPulseActive] = useState(false);
+  const likedPulseFrameRef = useRef<number | null>(null);
+  const likedPulseTimeoutRef = useRef<number | null>(null);
   const activeIndex = roadmapSteps.findIndex((item) => item.key === step);
+  const clearLikedPulseTimers = useCallback(() => {
+    if (likedPulseFrameRef.current !== null) {
+      window.cancelAnimationFrame(likedPulseFrameRef.current);
+      likedPulseFrameRef.current = null;
+    }
+
+    if (likedPulseTimeoutRef.current !== null) {
+      window.clearTimeout(likedPulseTimeoutRef.current);
+      likedPulseTimeoutRef.current = null;
+    }
+  }, []);
   const handleDiscoverClick = (
     event: MouseEvent<HTMLAnchorElement>,
     href: string,
@@ -91,8 +106,33 @@ export function Roadmap({ step }: RoadmapProps) {
     mounted && isConnectorActive("match", step),
   ];
 
+  useEffect(() => {
+    const handleLikedStepPulse = () => {
+      clearLikedPulseTimers();
+      setIsLikedPulseActive(false);
+
+      likedPulseFrameRef.current = window.requestAnimationFrame(() => {
+        setIsLikedPulseActive(true);
+        likedPulseTimeoutRef.current = window.setTimeout(() => {
+          setIsLikedPulseActive(false);
+          likedPulseTimeoutRef.current = null;
+        }, 1900);
+      });
+    };
+
+    window.addEventListener("revmatched:liked-step-pulse", handleLikedStepPulse);
+
+    return () => {
+      window.removeEventListener(
+        "revmatched:liked-step-pulse",
+        handleLikedStepPulse,
+      );
+      clearLikedPulseTimers();
+    };
+  }, [clearLikedPulseTimers]);
+
   return (
-    <section className="border-b border-white/5 bg-[linear-gradient(180deg,rgba(3,11,17,0.92)_0%,rgba(3,11,17,0.76)_100%)]">
+    <section className="sticky top-0 z-40 border-b border-white/5 bg-[linear-gradient(180deg,rgba(3,11,17,0.92)_0%,rgba(3,11,17,0.76)_100%)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-5 py-3 sm:px-8 lg:px-12 lg:py-4">
         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-400">
           Journey roadmap
@@ -103,11 +143,19 @@ export function Roadmap({ step }: RoadmapProps) {
               {connectorStates.map((isActive, index) => (
                 <div
                   key={roadmapSteps[index + 1]?.key}
-                  className={`h-[2px] rounded-full transition-colors duration-300 ${
+                  className={`relative h-[2px] overflow-hidden rounded-full transition-[background-color,height] duration-300 ${
                     isActive ? "bg-accent" : "bg-slate-800"
+                  } ${
+                    index === 1 && isLikedPulseActive
+                      ? "h-1 bg-slate-800"
+                      : ""
                   }`}
                   aria-hidden="true"
-                />
+                >
+                  {index === 1 && isLikedPulseActive ? (
+                    <span className="roadmap-liked-connector-fill absolute inset-y-0 left-0 rounded-full bg-accent" />
+                  ) : null}
+                </div>
               ))}
             </div>
             <div className="grid grid-cols-4 gap-3 sm:gap-4">
@@ -135,6 +183,8 @@ export function Roadmap({ step }: RoadmapProps) {
                   : isCompleted
                     ? "border-accent bg-accent text-white"
                     : "border-slate-700 bg-[#16212b] text-slate-300";
+                const shouldPulseLikedStep =
+                  item.key === "like" && isLikedPulseActive;
                 const titleClasses = isActive
                   ? "text-white"
                   : isCompleted
@@ -149,9 +199,11 @@ export function Roadmap({ step }: RoadmapProps) {
                     aria-current={isActive ? "step" : undefined}
                   >
                     <span
-                      className={`inline-flex h-[3.5rem] w-[3.5rem] items-center justify-center rounded-full border transition sm:h-[4.5rem] sm:w-[4.5rem] ${iconShellClasses}`}
+                      className={`inline-flex h-[2.625rem] w-[2.625rem] items-center justify-center rounded-full border transition sm:h-[3.375rem] sm:w-[3.375rem] ${iconShellClasses} ${
+                        shouldPulseLikedStep ? "roadmap-liked-pulse" : ""
+                      }`}
                     >
-                      <Icon size={26} strokeWidth={2.4} aria-hidden="true" className="sm:h-8 sm:w-8" />
+                      <Icon size={20} strokeWidth={2.4} aria-hidden="true" className="sm:h-6 sm:w-6" />
                     </span>
                     <span className="mt-3 flex items-center justify-center text-[0.92rem] font-semibold uppercase tracking-[0.12em] sm:mt-4 sm:text-[1.12rem] sm:tracking-[0.16em] md:text-[1.2rem]">
                       <span className={titleClasses}>{label}</span>

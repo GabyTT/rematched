@@ -268,6 +268,10 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       return next;
     });
 
+    if (state === "liked" && previousState !== "liked") {
+      window.dispatchEvent(new Event("revmatched:liked-step-pulse"));
+    }
+
     if (state !== "matched") {
       setCompareCarIds((current) => {
         if (!current.includes(carId)) {

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Search } from "lucide-react";
 
 import { CarBrowseActions } from "@/components/CarBrowseActions";
 import { CarCard } from "@/components/CarCard";
@@ -185,38 +184,19 @@ export default function DiscoverPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-5 py-6 sm:px-8 lg:px-12 lg:py-8">
-        <section className="page-panel motion-rise-fade motion-delay-0 space-y-4 rounded-[28px] border border-input bg-panel p-5 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="max-w-3xl">
-              <h2 className="flex items-center gap-3 text-3xl font-semibold text-white sm:text-4xl">
-                <Search
-                  size={28}
-                  strokeWidth={2.4}
-                  className="shrink-0 text-slate-200"
-                  aria-hidden="true"
-                />
-                Your Matches
-              </h2>
-              <p className="mt-2 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
-                {discoverCars.length
-                  ? "Swipe through cars that match your preferences."
-                  : "No matches right now — try widening your range or explore below."}
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-5 py-4 sm:px-8 lg:px-12 lg:py-5">
+        <section className="page-panel motion-rise-fade motion-delay-0 space-y-2.5 rounded-[28px] border border-input bg-panel p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-5">
+          {discoverCars.length ? (
+            <SwipeDeck
+              key={deckKey}
+              cars={discoverCars}
+              preferenceChips={activePreferenceChips}
+            />
+          ) : (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+                No matches right now — try widening your range or explore below.
               </p>
-              {activePreferenceChips.length ? (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {activePreferenceChips.map((chip) => (
-                    <span
-                      key={chip}
-                      className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-semibold text-slate-200 backdrop-blur-sm transition hover:bg-white/10"
-                    >
-                      {chip}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap items-center gap-3 sm:justify-end">
               <Link
                 href="/like"
                 className="app-button inline-flex w-fit items-center rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
@@ -224,11 +204,7 @@ export default function DiscoverPage() {
                 Review Liked
               </Link>
             </div>
-          </div>
-
-          {discoverCars.length ? (
-            <SwipeDeck key={deckKey} cars={discoverCars} />
-          ) : null}
+          )}
         </section>
 
         <section className="page-panel motion-rise-fade motion-delay-2 rounded-[28px] border border-input bg-panel p-5 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-6">

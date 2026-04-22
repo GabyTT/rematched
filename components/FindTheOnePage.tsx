@@ -185,6 +185,8 @@ export function FindTheOnePage() {
   const [loanTermYears, setLoanTermYears] = useState<number | null>(null);
   const [interestRateInput, setInterestRateInput] = useState("7.5");
   const wasDirtyRef = useRef(false);
+  const dirtyShakeTimeoutRef = useRef<number | null>(null);
+  const dirtyShakeResetTimeoutRef = useRef<number | null>(null);
   const availableBrandsScrollRef = useRef<HTMLDivElement | null>(null);
   const [showBrandScrollCue, setShowBrandScrollCue] = useState(false);
   const [showBrandLeftFade, setShowBrandLeftFade] = useState(false);
@@ -262,33 +264,46 @@ export function FindTheOnePage() {
   const isDirty =
     JSON.stringify(currentFormValues) !== JSON.stringify(savedFormValues);
 
-  useEffect(() => {
-    if (isDirty && !wasDirtyRef.current) {
-      const frameId = window.requestAnimationFrame(() => {
-        setIsDirtyPopActive(true);
-      });
-      const timeoutId = window.setTimeout(() => {
-        setIsDirtyPopActive(false);
-      }, 440);
-
-      wasDirtyRef.current = true;
-      return () => {
-        window.cancelAnimationFrame(frameId);
-        window.clearTimeout(timeoutId);
-      };
+  const clearDirtyShakeTimers = useCallback(() => {
+    if (dirtyShakeTimeoutRef.current !== null) {
+      window.clearTimeout(dirtyShakeTimeoutRef.current);
+      dirtyShakeTimeoutRef.current = null;
     }
+
+    if (dirtyShakeResetTimeoutRef.current !== null) {
+      window.clearTimeout(dirtyShakeResetTimeoutRef.current);
+      dirtyShakeResetTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    clearDirtyShakeTimers();
+    const resetFrameId = window.requestAnimationFrame(() => {
+      setIsDirtyPopActive(false);
+    });
 
     if (!isDirty) {
       wasDirtyRef.current = false;
-      const frameId = window.requestAnimationFrame(() => {
-        setIsDirtyPopActive(false);
-      });
 
-      return () => window.cancelAnimationFrame(frameId);
+      return () => {
+        window.cancelAnimationFrame(resetFrameId);
+        clearDirtyShakeTimers();
+      };
     }
 
-    return undefined;
-  }, [isDirty]);
+    wasDirtyRef.current = true;
+    dirtyShakeTimeoutRef.current = window.setTimeout(() => {
+      setIsDirtyPopActive(true);
+      dirtyShakeResetTimeoutRef.current = window.setTimeout(() => {
+        setIsDirtyPopActive(false);
+      }, 720);
+    }, 2000);
+
+    return () => {
+      window.cancelAnimationFrame(resetFrameId);
+      clearDirtyShakeTimers();
+    };
+  }, [clearDirtyShakeTimers, currentFormValues, isDirty]);
 
   useEffect(() => {
     const element = availableBrandsScrollRef.current;
@@ -341,6 +356,7 @@ export function FindTheOnePage() {
     }
 
     wasDirtyRef.current = false;
+    clearDirtyShakeTimers();
     setIsDirtyPopActive(false);
     router.push("/discover");
     return true;
@@ -353,6 +369,7 @@ export function FindTheOnePage() {
     isDirty,
     isSubmitting,
     budgetRangeIsValid,
+    clearDirtyShakeTimers,
     router,
     updatePreferences,
   ]);
@@ -410,6 +427,14 @@ export function FindTheOnePage() {
       ? `Replace current type with ${helperResult.suggestedTypeLabel}`
       : `Use ${helperResult.suggestedTypeLabel} as a starting point`
     : "";
+  const helperCardBaseClassName =
+    "page-panel rounded-[32px] border p-6 shadow-[0_16px_36px_rgba(0,0,0,0.2)] sm:p-8";
+  const helperCardInactiveClassName =
+    "home-stage-card group border-white/8 bg-[linear-gradient(180deg,rgba(10,18,24,0.92)_0%,rgba(7,14,20,0.9)_100%)] text-slate-100";
+  const helperCardActiveClassName =
+    "border-[#d3dde6] bg-white text-[#17212b] shadow-[0_18px_44px_rgba(18,31,43,0.12)]";
+  const isHelperWizardOpen =
+    helperStep !== "intro" || budgetHelperStep !== "intro";
 
   const handleApplySuggestedType = () => {
     if (!helperResult) {
@@ -425,6 +450,7 @@ export function FindTheOnePage() {
         ? `${helperResult.suggestedTypeLabel} replaced your current Define type`
         : `${helperResult.suggestedTypeLabel} added to your Define preferences`,
     );
+    resetHelper();
   };
 
   const resetHelper = () => {
@@ -457,6 +483,7 @@ export function FindTheOnePage() {
         ? "Budget range replaced in your Define preferences"
         : "Budget range added to your Define preferences",
     );
+    resetBudgetHelper();
   };
 
   if (!mounted) {
@@ -466,7 +493,13 @@ export function FindTheOnePage() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(209,19,58,0.16),transparent_24%),linear-gradient(180deg,#011118_0%,#000000_44%,#04121a_100%)] text-foreground">
       <div className="mx-auto grid w-full max-w-7xl gap-6 px-5 py-5 sm:px-8 lg:grid-cols-[1.18fr_0.82fr] lg:px-12 lg:py-6">
-        <section className="page-panel motion-rise-fade motion-delay-1 rounded-[32px] border border-[#d9e0e7] bg-white p-6 text-[#17212b] shadow-[0_8px_24px_rgba(0,0,0,0.15)] sm:p-8">
+        <section
+          className={`page-panel motion-rise-fade motion-delay-1 rounded-[32px] border border-[#d9e0e7] p-6 text-[#17212b] transition sm:p-8 ${
+            isHelperWizardOpen
+              ? "bg-[#dfe5eb] opacity-[0.78] shadow-[0_1px_6px_rgba(0,0,0,0.04)]"
+              : "bg-white shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
+          }`}
+        >
           <div>
             <div className="mb-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -485,8 +518,10 @@ export function FindTheOnePage() {
                 form="define-preferences-form"
                 data-dirty={isDirty ? "true" : "false"}
                 data-pop={isDirtyPopActive ? "true" : "false"}
-                className={`app-button inline-flex items-center justify-center rounded-full border border-transparent bg-accent px-5 py-2 text-sm font-semibold text-white transition duration-200 hover:scale-[1.02] hover:brightness-110 md:text-base ${
-                  isDirty ? "save-discover-dirty" : ""
+                className={`app-button inline-flex items-center justify-center rounded-full border px-5 py-2 text-sm font-semibold text-white transition duration-200 hover:scale-[1.02] md:text-base disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isDirty
+                    ? "border-transparent bg-accent hover:brightness-110 save-discover-dirty"
+                    : "save-discover-idle border-[#aebac5] bg-[#8a98a6] hover:bg-[#7b8996] hover:brightness-105"
                 } ${isDirtyPopActive ? "save-discover-pop" : ""}`}
                 disabled={isSubmitting || !budgetRangeIsValid}
               >
@@ -660,8 +695,10 @@ export function FindTheOnePage() {
 
         <div className="motion-rise-fade motion-delay-2 space-y-6">
           <section
-            className={`page-panel home-stage-card group rounded-[32px] border border-white/8 bg-[linear-gradient(180deg,rgba(10,18,24,0.92)_0%,rgba(7,14,20,0.9)_100%)] p-6 text-slate-100 shadow-[0_16px_36px_rgba(0,0,0,0.2)] sm:p-8 ${
-              helperStep === "intro" ? "cursor-pointer" : ""
+            className={`${helperCardBaseClassName} ${
+              helperStep === "intro"
+                ? `${helperCardInactiveClassName} cursor-pointer`
+                : helperCardActiveClassName
             }`}
             onClick={() => {
               if (helperStep === "intro") {
@@ -703,7 +740,7 @@ export function FindTheOnePage() {
             ) : null}
 
             {helperStep === "question-1" ? (
-              <div>
+              <div className="bg-white text-[#17212b]">
                 <HelperStepHeader label="Question 1 of 2" onClose={resetHelper} />
                 <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[#dbe5dc]">
                   <div
@@ -740,7 +777,7 @@ export function FindTheOnePage() {
             ) : null}
 
             {helperStep === "question-2" ? (
-              <div>
+              <div className="bg-white text-[#17212b]">
                 <HelperStepHeader
                   label="Question 2 of 2"
                   onBack={() => setHelperStep("question-1")}
@@ -780,7 +817,7 @@ export function FindTheOnePage() {
             ) : null}
 
             {helperStep === "result" && helperResult ? (
-              <div>
+              <div className="bg-white text-[#17212b]">
                 <p className="text-[1.3rem] font-semibold uppercase tracking-[0.18em] text-[#2E3C4A] sm:text-[1.45rem]">
                   Your car type
                 </p>
@@ -829,8 +866,10 @@ export function FindTheOnePage() {
           </section>
 
           <section
-            className={`page-panel home-stage-card group rounded-[32px] border border-white/8 bg-[linear-gradient(180deg,rgba(10,18,24,0.92)_0%,rgba(7,14,20,0.9)_100%)] p-6 text-slate-100 shadow-[0_16px_36px_rgba(0,0,0,0.2)] sm:p-8 ${
-              budgetHelperStep === "intro" ? "cursor-pointer" : ""
+            className={`${helperCardBaseClassName} ${
+              budgetHelperStep === "intro"
+                ? `${helperCardInactiveClassName} cursor-pointer`
+                : helperCardActiveClassName
             }`}
             onClick={() => {
               if (budgetHelperStep === "intro") {
@@ -871,7 +910,7 @@ export function FindTheOnePage() {
             ) : null}
 
             {budgetHelperStep === "question-1" ? (
-              <div>
+              <div className="bg-white text-[#17212b]">
                 <HelperStepHeader
                   label="Question 1 of 4"
                   onClose={resetBudgetHelper}
@@ -947,7 +986,7 @@ export function FindTheOnePage() {
             ) : null}
 
             {budgetHelperStep === "question-2" ? (
-              <div>
+              <div className="bg-white text-[#17212b]">
                 <HelperStepHeader
                   label="Question 2 of 4"
                   onBack={() => setBudgetHelperStep("question-1")}
@@ -1007,7 +1046,7 @@ export function FindTheOnePage() {
             ) : null}
 
             {budgetHelperStep === "question-3" ? (
-              <div>
+              <div className="bg-white text-[#17212b]">
                 <HelperStepHeader
                   label="Question 3 of 4"
                   onBack={() => setBudgetHelperStep("question-2")}
@@ -1070,7 +1109,7 @@ export function FindTheOnePage() {
             ) : null}
 
             {budgetHelperStep === "question-4" ? (
-              <div>
+              <div className="bg-white text-[#17212b]">
                 <HelperStepHeader
                   label="Question 4 of 4"
                   onBack={() => setBudgetHelperStep("question-3")}
@@ -1136,7 +1175,7 @@ export function FindTheOnePage() {
             monthlyPayment !== null &&
             downPayment !== null &&
             loanTermYears !== null ? (
-              <div>
+              <div className="bg-white text-[#17212b]">
                 <p className="text-[1.3rem] font-semibold uppercase tracking-[0.18em] text-[#2E3C4A] sm:text-[1.45rem]">
                   Your starting budget
                 </p>
