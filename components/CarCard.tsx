@@ -63,7 +63,7 @@ export function CarCard({
   return (
     <article
       data-card-status={status ?? "default"}
-      className={`group interactive-panel page-panel overflow-hidden rounded-[28px] transition duration-300 ${
+      className={`group interactive-panel page-panel flex h-full flex-col overflow-hidden rounded-[28px] transition duration-300 ${
         isLight
           ? "border border-transparent bg-[#F7F7F8] shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(0,0,0,0.12)]"
           : "border border-transparent bg-panel shadow-[0_18px_40px_rgba(0,0,0,0.28)] hover:-translate-y-1 hover:shadow-[0_28px_60px_rgba(0,0,0,0.45)]"
@@ -102,27 +102,19 @@ export function CarCard({
         ) : null}
       </div>
 
-      <div className={`space-y-4 ${isLight ? "p-5" : "p-5"}`}>
-        <span
-          className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/10 ${
-            isLight
-              ? "border border-[#D9E0E7] bg-white/90 text-[#314154]"
-              : "border border-white/10 bg-white/5 text-slate-200"
-          }`}
-        >
-          {category}
-        </span>
-
-        <div className="flex items-start justify-between gap-4">
-          <h3
-            className={`min-w-0 flex-1 text-lg font-semibold tracking-tight ${
-              isLight ? "text-[#16212B]" : "text-white"
+      <div className={`flex flex-1 flex-col gap-2 ${isLight ? "p-5" : "p-5"}`}>
+        <div className="flex items-center justify-between gap-4">
+          <span
+            className={`inline-flex min-w-0 max-w-[58%] items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/10 ${
+              isLight
+                ? "border border-[#D9E0E7] bg-white/90 text-[#314154]"
+                : "border border-white/10 bg-white/5 text-slate-200"
             }`}
           >
-            {name}
-          </h3>
+            <span className="truncate">{category}</span>
+          </span>
           <p
-            className={`shrink-0 text-2xl font-semibold tracking-tight ${
+            className={`shrink-0 text-xl font-semibold tracking-tight sm:text-2xl ${
               isLight ? "text-[#16212B]" : "text-white"
             }`}
           >
@@ -130,19 +122,33 @@ export function CarCard({
           </p>
         </div>
 
-        {indicator}
-
-        {footer ?? (
-          <button
-            className={`app-button inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition duration-200 ${
-              isLight
-                ? "border border-accent bg-accent text-white hover:brightness-110"
-                : "border border-accent text-white hover:bg-accent"
+        <div className="min-h-7">
+          <h3
+            className={`truncate whitespace-nowrap text-lg font-semibold tracking-tight ${
+              isLight ? "text-[#16212B]" : "text-white"
             }`}
           >
-            View details
-          </button>
-        )}
+            {name}
+          </h3>
+        </div>
+
+        <div className={indicator ? "min-h-6" : "min-h-1"}>
+          {indicator}
+        </div>
+
+        <div>
+          {footer ?? (
+            <button
+              className={`app-button inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition duration-200 ${
+                isLight
+                  ? "border border-accent bg-accent text-white hover:brightness-110"
+                  : "border border-accent text-white hover:bg-accent"
+              }`}
+            >
+              View Details
+            </button>
+          )}
+        </div>
       </div>
     </article>
   );

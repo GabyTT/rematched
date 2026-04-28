@@ -582,7 +582,7 @@ export default function LifeTogetherPage() {
                               onClick={() => openCarDrawer(car.id, "view")}
                               className="nav-pill flex w-full rounded-xl px-3 py-2 text-left text-sm text-slate-300 hover:bg-input"
                             >
-                              View details
+                              View Details
                             </button>
                             <button
                               type="button"
@@ -786,7 +786,7 @@ export default function LifeTogetherPage() {
 
                 <div className="mt-6 grid gap-3">
                   {[
-                    "View details",
+                    "View Details",
                     "Log a service",
                     "Set a reminder",
                     "Update mileage",
@@ -796,7 +796,7 @@ export default function LifeTogetherPage() {
                       key={action}
                       type="button"
                       onClick={() => {
-                        if (action === "View details") {
+                        if (action === "View Details") {
                           openCarDrawer(selectedCar.id, "view");
                         }
 
@@ -901,7 +901,7 @@ export default function LifeTogetherPage() {
                       type="button"
                       className="app-button inline-flex justify-center rounded-full border border-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-accent"
                     >
-                      View details
+                      View Details
                     </button>
                     <button
                       type="button"

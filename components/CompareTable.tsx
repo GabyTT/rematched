@@ -86,7 +86,7 @@ export function CompareTable({
                         className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/18 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/35 hover:bg-white/6 hover:text-white"
                       >
                         <Eye size={20} strokeWidth={2.4} className="text-slate-200" />
-                        View details
+                        View Details
                       </button>
                       <button
                         type="button"

@@ -227,15 +227,15 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
 
   const setCarState = (carId: string, state: CarJourneyState) => {
     const previousState = carProgress[carId]?.state ?? null;
+    const currentMatchedCount = Object.entries(carProgress).filter(
+      ([id, value]) => value.state === "matched" && id !== carId,
+    ).length;
+    const nextState =
+      state === "matched" && previousState !== "matched" && currentMatchedCount >= 3
+        ? previousState
+        : state;
 
     setCarProgress((current) => {
-      const currentMatchedCount = Object.entries(current).filter(
-        ([id, value]) => value.state === "matched" && id !== carId,
-      ).length;
-      const nextState =
-        state === "matched" && previousState !== "matched" && currentMatchedCount >= 3
-          ? previousState
-          : state;
       const next = {
         ...current,
         [carId]: {
@@ -268,11 +268,31 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       return next;
     });
 
-    if (state === "liked" && previousState !== "liked") {
-      window.dispatchEvent(new Event("revmatched:liked-step-pulse"));
+    if (nextState !== previousState) {
+      if (nextState === "liked" && previousState !== "liked") {
+        window.dispatchEvent(
+          new CustomEvent("revmatched:roadmap-transition", {
+            detail: {
+              from: previousState === "matched" ? "match" : "discover",
+              to: "like",
+            },
+          }),
+        );
+      }
+
+      if (nextState === "matched" && previousState === "liked") {
+        window.dispatchEvent(
+          new CustomEvent("revmatched:roadmap-transition", {
+            detail: {
+              from: "like",
+              to: "match",
+            },
+          }),
+        );
+      }
     }
 
-    if (state !== "matched") {
+    if (nextState !== "matched") {
       setCompareCarIds((current) => {
         if (!current.includes(carId)) {
           return current;

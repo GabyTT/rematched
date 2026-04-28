@@ -37,7 +37,7 @@ export function CarBrowseActions({
           strokeWidth={2.4}
           className={isLight ? "text-[#6B7A89]" : "text-slate-200"}
         />
-        View details
+        View Details
       </button>
       <CarDecisionActions
         onLike={onLike}

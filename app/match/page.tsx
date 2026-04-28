@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Heart } from "lucide-react";
+import { ArrowRightLeft, FileText, Heart, Minus, Plus } from "lucide-react";
 
 import { CarDetailsModal } from "@/components/CarDetailsModal";
 import { CompareTable } from "@/components/CompareTable";
@@ -19,6 +19,7 @@ export default function MatchPage() {
   const [activeDetailsCarId, setActiveDetailsCarId] = useState<string | null>(
     null,
   );
+  const [isTopPicksHelpOpen, setIsTopPicksHelpOpen] = useState(false);
 
   if (!mounted) {
     return null;
@@ -53,6 +54,17 @@ export default function MatchPage() {
                     aria-hidden="true"
                   />
                   Compare Top Picks
+                  <button
+                    type="button"
+                    onClick={() => setIsTopPicksHelpOpen((current) => !current)}
+                    aria-expanded={isTopPicksHelpOpen}
+                    aria-label="How Compare Top Picks works"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.28)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel active:scale-95"
+                  >
+                    <span aria-hidden="true" className="font-serif text-[1.7rem] font-bold italic leading-none">
+                      i
+                    </span>
+                  </button>
                 </h1>
                 <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
                   See your top picks side by side to choose the right one.
@@ -65,6 +77,78 @@ export default function MatchPage() {
                 Back to Liked
               </Link>
             </div>
+
+            {isTopPicksHelpOpen ? (
+              <div className="liked-help-panel mx-auto mt-5 w-full max-w-xl rounded-[28px] border border-white/10 bg-[#07141d] p-5 shadow-[0_18px_42px_rgba(0,0,0,0.28)]">
+                <h2 className="text-2xl font-semibold text-white">
+                  How this works
+                </h2>
+                <div className="mt-5 space-y-4">
+                  <div className="flex gap-3">
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-white">
+                      <ArrowRightLeft size={19} strokeWidth={2.4} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="text-lg font-semibold text-white">
+                        Compare
+                      </p>
+                      <p className="mt-1 text-base leading-7 text-slate-300">
+                        See your top picks side by side to spot the best fit.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/7 text-slate-200">
+                      <FileText size={19} strokeWidth={2.4} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="text-lg font-semibold text-white">
+                        Notes
+                      </p>
+                      <p className="mt-1 text-base leading-7 text-slate-300">
+                        Capture quick thoughts so you don’t forget what stands out.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/7 text-slate-200">
+                      <Minus size={19} strokeWidth={2.4} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="text-lg font-semibold text-white">
+                        Refine
+                      </p>
+                      <p className="mt-1 text-base leading-7 text-slate-300">
+                        Remove cars to narrow down to your final choice.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/7 text-slate-200">
+                      <Plus size={19} strokeWidth={2.4} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="text-lg font-semibold text-white">
+                        Add more
+                      </p>
+                      <p className="mt-1 text-base leading-7 text-slate-300">
+                        Bring in another top pick if you want to compare more options.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <p className="mt-5 text-base font-medium leading-7 text-slate-400">
+                  Your top picks are where decisions happen.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsTopPicksHelpOpen(false)}
+                  className="app-button mt-5 inline-flex w-full justify-center rounded-full border border-white/15 bg-white/8 px-5 py-3 text-base font-semibold text-white transition hover:bg-white/12"
+                >
+                  Got it
+                </button>
+              </div>
+            ) : null}
 
             <div className="mt-5">
               <SponsorCard

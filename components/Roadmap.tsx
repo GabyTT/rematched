@@ -13,12 +13,18 @@ import {
 import { useJourney } from "@/components/JourneyProvider";
 import { useMounted } from "@/hooks/useMounted";
 import { cars } from "@/lib/cars";
-import { getDiscoverableCars } from "@/lib/matching";
+import { getDiscoverableCars, hasUsablePreferences } from "@/lib/matching";
 
 type RoadmapStep = "define" | "discover" | "like" | "match";
 
 type RoadmapProps = {
   step: RoadmapStep;
+};
+
+type RoadmapTransition = {
+  connectorIndex: number;
+  direction: "forward" | "reverse";
+  destination: RoadmapStep;
 };
 
 const roadmapSteps = [
@@ -51,19 +57,20 @@ const roadmapSteps = [
 export function Roadmap({ step }: RoadmapProps) {
   const mounted = useMounted();
   const { carProgress, preferences } = useJourney();
-  const [isLikedPulseActive, setIsLikedPulseActive] = useState(false);
-  const likedPulseFrameRef = useRef<number | null>(null);
-  const likedPulseTimeoutRef = useRef<number | null>(null);
+  const [activeTransition, setActiveTransition] =
+    useState<RoadmapTransition | null>(null);
+  const transitionFrameRef = useRef<number | null>(null);
+  const transitionTimeoutRef = useRef<number | null>(null);
   const activeIndex = roadmapSteps.findIndex((item) => item.key === step);
-  const clearLikedPulseTimers = useCallback(() => {
-    if (likedPulseFrameRef.current !== null) {
-      window.cancelAnimationFrame(likedPulseFrameRef.current);
-      likedPulseFrameRef.current = null;
+  const clearTransitionTimers = useCallback(() => {
+    if (transitionFrameRef.current !== null) {
+      window.cancelAnimationFrame(transitionFrameRef.current);
+      transitionFrameRef.current = null;
     }
 
-    if (likedPulseTimeoutRef.current !== null) {
-      window.clearTimeout(likedPulseTimeoutRef.current);
-      likedPulseTimeoutRef.current = null;
+    if (transitionTimeoutRef.current !== null) {
+      window.clearTimeout(transitionTimeoutRef.current);
+      transitionTimeoutRef.current = null;
     }
   }, []);
   const handleDiscoverClick = (
@@ -81,6 +88,8 @@ export function Roadmap({ step }: RoadmapProps) {
     }
   };
   const discoverCount = getDiscoverableCars(cars, preferences, carProgress).length;
+  const shouldGuideDefine =
+    mounted && step === "discover" && !hasUsablePreferences(preferences);
   const likeCount = Object.values(carProgress).filter(
     (value) => value.state === "liked",
   ).length;
@@ -107,29 +116,72 @@ export function Roadmap({ step }: RoadmapProps) {
   ];
 
   useEffect(() => {
-    const handleLikedStepPulse = () => {
-      clearLikedPulseTimers();
-      setIsLikedPulseActive(false);
+    const getTransition = (
+      from: RoadmapStep,
+      to: RoadmapStep,
+    ): RoadmapTransition | null => {
+      if (from === "discover" && to === "like") {
+        return { connectorIndex: 1, direction: "forward", destination: "like" };
+      }
 
-      likedPulseFrameRef.current = window.requestAnimationFrame(() => {
-        setIsLikedPulseActive(true);
-        likedPulseTimeoutRef.current = window.setTimeout(() => {
-          setIsLikedPulseActive(false);
-          likedPulseTimeoutRef.current = null;
+      if (from === "like" && to === "match") {
+        return { connectorIndex: 2, direction: "forward", destination: "match" };
+      }
+
+      if (from === "match" && to === "like") {
+        return { connectorIndex: 2, direction: "reverse", destination: "like" };
+      }
+
+      return null;
+    };
+
+    const isRoadmapStep = (value: unknown): value is RoadmapStep =>
+      value === "define" ||
+      value === "discover" ||
+      value === "like" ||
+      value === "match";
+
+    const handleRoadmapTransition = (event: Event) => {
+      const detail =
+        event instanceof CustomEvent
+          ? (event.detail as { from?: unknown; to?: unknown })
+          : null;
+
+      if (!detail || !isRoadmapStep(detail.from) || !isRoadmapStep(detail.to)) {
+        return;
+      }
+
+      const nextTransition = getTransition(detail.from, detail.to);
+
+      if (!nextTransition) {
+        return;
+      }
+
+      clearTransitionTimers();
+      setActiveTransition(null);
+
+      transitionFrameRef.current = window.requestAnimationFrame(() => {
+        setActiveTransition(nextTransition);
+        transitionTimeoutRef.current = window.setTimeout(() => {
+          setActiveTransition(null);
+          transitionTimeoutRef.current = null;
         }, 1900);
       });
     };
 
-    window.addEventListener("revmatched:liked-step-pulse", handleLikedStepPulse);
+    window.addEventListener(
+      "revmatched:roadmap-transition",
+      handleRoadmapTransition,
+    );
 
     return () => {
       window.removeEventListener(
-        "revmatched:liked-step-pulse",
-        handleLikedStepPulse,
+        "revmatched:roadmap-transition",
+        handleRoadmapTransition,
       );
-      clearLikedPulseTimers();
+      clearTransitionTimers();
     };
-  }, [clearLikedPulseTimers]);
+  }, [clearTransitionTimers]);
 
   return (
     <section className="sticky top-0 z-40 border-b border-white/5 bg-[linear-gradient(180deg,rgba(3,11,17,0.92)_0%,rgba(3,11,17,0.76)_100%)] backdrop-blur">
@@ -146,14 +198,20 @@ export function Roadmap({ step }: RoadmapProps) {
                   className={`relative h-[2px] overflow-hidden rounded-full transition-[background-color,height] duration-300 ${
                     isActive ? "bg-accent" : "bg-slate-800"
                   } ${
-                    index === 1 && isLikedPulseActive
+                    activeTransition?.connectorIndex === index
                       ? "h-1 bg-slate-800"
                       : ""
                   }`}
                   aria-hidden="true"
                 >
-                  {index === 1 && isLikedPulseActive ? (
-                    <span className="roadmap-liked-connector-fill absolute inset-y-0 left-0 rounded-full bg-accent" />
+                  {activeTransition?.connectorIndex === index ? (
+                    <span
+                      className={`roadmap-transition-connector-fill absolute inset-y-0 rounded-full bg-accent ${
+                        activeTransition.direction === "reverse"
+                          ? "right-0 roadmap-transition-connector-fill-reverse"
+                          : "left-0"
+                      }`}
+                    />
                   ) : null}
                 </div>
               ))}
@@ -183,8 +241,10 @@ export function Roadmap({ step }: RoadmapProps) {
                   : isCompleted
                     ? "border-accent bg-accent text-white"
                     : "border-slate-700 bg-[#16212b] text-slate-300";
-                const shouldPulseLikedStep =
-                  item.key === "like" && isLikedPulseActive;
+                const shouldPulseTransitionDestination =
+                  item.key === activeTransition?.destination;
+                const shouldPulseDefineStep =
+                  item.key === "define" && shouldGuideDefine;
                 const titleClasses = isActive
                   ? "text-white"
                   : isCompleted
@@ -200,7 +260,11 @@ export function Roadmap({ step }: RoadmapProps) {
                   >
                     <span
                       className={`inline-flex h-[2.625rem] w-[2.625rem] items-center justify-center rounded-full border transition sm:h-[3.375rem] sm:w-[3.375rem] ${iconShellClasses} ${
-                        shouldPulseLikedStep ? "roadmap-liked-pulse" : ""
+                        shouldPulseTransitionDestination
+                          ? "roadmap-transition-destination-pulse"
+                          : ""
+                      } ${
+                        shouldPulseDefineStep ? "roadmap-define-attention" : ""
                       }`}
                     >
                       <Icon size={20} strokeWidth={2.4} aria-hidden="true" className="sm:h-6 sm:w-6" />
