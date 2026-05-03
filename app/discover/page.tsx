@@ -12,6 +12,7 @@ import {
   SwipeDeck,
 } from "@/components/SwipeDeck";
 import { SponsorCard } from "@/components/SponsorCard";
+import { TopPickLimitSheet } from "@/components/TopPickLimitSheet";
 import { useJourney } from "@/components/JourneyProvider";
 import { useMounted } from "@/hooks/useMounted";
 import { cars, type Car } from "@/lib/cars";
@@ -217,6 +218,9 @@ export default function DiscoverPage() {
   const router = useRouter();
   const [deckKey, setDeckKey] = useState(0);
   const [activeDetailsCar, setActiveDetailsCar] = useState<Car | null>(null);
+  const [replacementCandidateCarId, setReplacementCandidateCarId] = useState<
+    string | null
+  >(null);
   const [shouldPulseKeepExploringTab, setShouldPulseKeepExploringTab] =
     useState(false);
   const [isExploreHelpOpen, setIsExploreHelpOpen] = useState(false);
@@ -224,7 +228,8 @@ export default function DiscoverPage() {
   const exploreSectionRef = useRef<HTMLElement | null>(null);
   const exploreTabsRef = useRef<HTMLDivElement | null>(null);
   const keepExploringPulseTimeoutRef = useRef<number | null>(null);
-  const { carProgress, preferences, setCarState } = useJourney();
+  const { carProgress, preferences, setCarState, replaceEarliestTopPick } =
+    useJourney();
   const discoverCars = getDiscoverableCars(cars, preferences, carProgress);
   const [matchDeckCars, setMatchDeckCars] = useState(() => discoverCars);
   const hasDefinePreferences = hasUsablePreferences(preferences);
@@ -348,6 +353,7 @@ export default function DiscoverPage() {
   const topPickCount = Object.values(carProgress).filter(
     (value) => value.state === "matched",
   ).length;
+  const canAddTopPick = topPickCount < 3;
   const likedCount = Object.values(carProgress).filter(
     (value) => value.state === "liked",
   ).length;
@@ -421,6 +427,15 @@ export default function DiscoverPage() {
     },
     [],
   );
+
+  const handleTopPickRequest = (carId: string) => {
+    if (canAddTopPick) {
+      setCarState(carId, "matched");
+      return;
+    }
+
+    setReplacementCandidateCarId(carId);
+  };
 
   if (!mounted) {
     return null;
@@ -539,9 +554,9 @@ export default function DiscoverPage() {
                   onClick={() => setIsExploreHelpOpen((current) => !current)}
                   aria-expanded={isExploreHelpOpen}
                   aria-label="How Explore More works"
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.28)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel active:scale-95"
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.28)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel active:scale-95"
                 >
-                  <span aria-hidden="true" className="font-serif text-[1.7rem] font-bold italic leading-none">
+                  <span aria-hidden="true" className="font-serif text-[1.3rem] font-bold italic leading-none">
                     i
                   </span>
                 </button>
@@ -626,95 +641,95 @@ export default function DiscoverPage() {
             </div>
           ) : null}
 
-          <div className="mt-3">
-            <div className="overflow-hidden">
-              <div
-                ref={exploreTabsRef}
-                className="flex flex-wrap items-center gap-3 px-1 pt-1"
+          <div className="mt-3 space-y-3">
+            <div
+              ref={exploreTabsRef}
+              className="flex flex-wrap items-start gap-3 px-1"
+            >
+              {hasBudgetRange ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveExploreView("budget")}
+                  data-active-tab={currentExploreView === "budget"}
+                  className={`nav-pill inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-sm transition ${
+                    currentExploreView === "budget"
+                      ? "border-[#E7EDF3] bg-[#F7F7F8] text-[#D1133A]"
+                      : "nav-pill-inactive border-input bg-input text-slate-300"
+                  }`}
+                >
+                  <DollarSign size={16} strokeWidth={2.4} aria-hidden="true" />
+                  In your budget
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setActiveExploreView("keep-exploring")}
+                data-active-tab={currentExploreView === "keep-exploring"}
+                className={`nav-pill inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-sm transition ${
+                  currentExploreView === "keep-exploring"
+                    ? "border-[#E7EDF3] bg-[#F7F7F8] text-[#D1133A]"
+                    : "nav-pill-inactive border-input bg-input text-slate-300"
+                } ${
+                  shouldPulseKeepExploringTab &&
+                  currentExploreView === "keep-exploring"
+                    ? "explore-tab-shortcut-pulse"
+                    : ""
+                }`}
               >
-                {hasBudgetRange ? (
-                  <button
-                    type="button"
-                    onClick={() => setActiveExploreView("budget")}
-                    data-active-tab={currentExploreView === "budget"}
-                    className={`nav-pill inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-sm transition ${
-                      currentExploreView === "budget"
-                        ? "border-[#E7EDF3] bg-[#F7F7F8] text-[#D1133A]"
-                        : "nav-pill-inactive border-input bg-input text-slate-300"
-                    }`}
-                  >
-                    <DollarSign size={16} strokeWidth={2.4} aria-hidden="true" />
-                    In your budget
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => setActiveExploreView("keep-exploring")}
-                  data-active-tab={currentExploreView === "keep-exploring"}
-                  className={`nav-pill inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-sm transition ${
-                    currentExploreView === "keep-exploring"
-                      ? "border-[#E7EDF3] bg-[#F7F7F8] text-[#D1133A]"
-                      : "nav-pill-inactive border-input bg-input text-slate-300"
-                  } ${
-                    shouldPulseKeepExploringTab &&
-                    currentExploreView === "keep-exploring"
-                      ? "explore-tab-shortcut-pulse"
-                      : ""
-                  }`}
-                >
-                  <Search size={16} strokeWidth={2.4} aria-hidden="true" />
-                  Keep exploring
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveExploreView("second-chances")}
-                  data-active-tab={currentExploreView === "second-chances"}
-                  className={`nav-pill inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-sm transition ${
-                    currentExploreView === "second-chances"
-                      ? "border-[#E7EDF3] bg-[#F7F7F8] text-[#D1133A]"
-                      : "nav-pill-inactive border-input bg-input text-slate-300"
-                  }`}
-                >
-                  <RotateCcw size={16} strokeWidth={2.4} aria-hidden="true" />
-                  Second chances
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveExploreView("all")}
-                  data-active-tab={currentExploreView === "all"}
-                  className={`nav-pill inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-sm transition ${
-                    currentExploreView === "all"
-                      ? "border-[#E7EDF3] bg-[#F7F7F8] text-[#D1133A]"
-                      : "nav-pill-inactive border-input bg-input text-slate-300"
-                  }`}
-                >
-                  <Grid2x2 size={16} strokeWidth={2.4} aria-hidden="true" />
-                  All
-                </button>
-                {currentExploreView === "all" ? (
-                  <div className="min-w-[280px] flex-1 sm:max-w-[360px]">
-                    <label className="sr-only" htmlFor="explore-all-search">
-                      Search all cars
-                    </label>
-                    <div className="flex h-[42px] items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 backdrop-blur-sm transition focus-within:border-white/20 focus-within:bg-white/7">
-                      <Search
-                        size={16}
-                        strokeWidth={2.4}
-                        className="shrink-0 text-slate-400"
-                        aria-hidden="true"
-                      />
-                      <input
-                        id="explore-all-search"
-                        value={allExploreSearchQuery}
-                        onChange={(event) => setAllExploreSearchQuery(event.target.value)}
-                        placeholder="Search all cars"
-                        className="app-input w-full bg-transparent text-sm font-medium text-white outline-none placeholder:text-slate-500"
-                      />
-                    </div>
-                  </div>
-                ) : null}
-              </div>
+                <Search size={16} strokeWidth={2.4} aria-hidden="true" />
+                Keep exploring
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveExploreView("second-chances")}
+                data-active-tab={currentExploreView === "second-chances"}
+                className={`nav-pill inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-sm transition ${
+                  currentExploreView === "second-chances"
+                    ? "border-[#E7EDF3] bg-[#F7F7F8] text-[#D1133A]"
+                    : "nav-pill-inactive border-input bg-input text-slate-300"
+                }`}
+              >
+                <RotateCcw size={16} strokeWidth={2.4} aria-hidden="true" />
+                Second chances
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveExploreView("all")}
+                data-active-tab={currentExploreView === "all"}
+                className={`nav-pill inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-sm transition ${
+                  currentExploreView === "all"
+                    ? "border-[#E7EDF3] bg-[#F7F7F8] text-[#D1133A]"
+                    : "nav-pill-inactive border-input bg-input text-slate-300"
+                }`}
+              >
+                <Grid2x2 size={16} strokeWidth={2.4} aria-hidden="true" />
+                All
+              </button>
             </div>
+            {currentExploreView === "all" ? (
+              <div className="px-1">
+                <div className="min-w-0 sm:max-w-[360px]">
+                  <label className="sr-only" htmlFor="explore-all-search">
+                    Search all cars
+                  </label>
+                  <div className="flex h-[42px] items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 backdrop-blur-sm transition focus-within:border-white/20 focus-within:bg-white/7">
+                    <Search
+                      size={16}
+                      strokeWidth={2.4}
+                      className="shrink-0 text-slate-400"
+                      aria-hidden="true"
+                    />
+                    <input
+                      id="explore-all-search"
+                      value={allExploreSearchQuery}
+                      onChange={(event) => setAllExploreSearchQuery(event.target.value)}
+                      placeholder="Search all cars"
+                      className="app-input w-full bg-transparent text-sm font-medium text-white outline-none placeholder:text-slate-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : null}
             {currentExploreView === "all" ? (
               <p className="mt-1 text-xs text-slate-500">
                 Includes cars you’ve already seen.
@@ -725,7 +740,7 @@ export default function DiscoverPage() {
             </p>
           </div>
 
-          <div className="mt-4 rounded-[24px] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.015)_0%,rgba(255,255,255,0.005)_100%)] p-1.5 sm:p-2">
+          <div className="mt-4">
             <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
               {exploreCars.map((car, index) => {
                 const carState = carProgress[car.id]?.state;
@@ -745,13 +760,24 @@ export default function DiscoverPage() {
                       variant="dark"
                       topPickCount={topPickCount}
                       status={cardStatus}
+                      overlay={
+                        replacementCandidateCarId === car.id && !canAddTopPick ? (
+                          <TopPickLimitSheet
+                            onConfirm={() => {
+                              replaceEarliestTopPick(car.id);
+                              setReplacementCandidateCarId(null);
+                            }}
+                            onCancel={() => setReplacementCandidateCarId(null)}
+                          />
+                        ) : null
+                      }
                       footer={
                         <CarBrowseActions
                           variant="dark"
                           status={cardStatus}
                           onViewDetails={() => setActiveDetailsCar(car)}
                           onLike={() => setCarState(car.id, "liked")}
-                          onTopPick={() => setCarState(car.id, "matched")}
+                          onTopPick={() => handleTopPickRequest(car.id)}
                           onPass={() => setCarState(car.id, "rejected")}
                         />
                       }

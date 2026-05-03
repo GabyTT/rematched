@@ -7,16 +7,21 @@ import { Eye, FileText, Heart, ThumbsDown, ThumbsUp } from "lucide-react";
 import { CarCard } from "@/components/CarCard";
 import { CarDetailsModal } from "@/components/CarDetailsModal";
 import { NotesModal } from "@/components/NotesModal";
+import { TopPickLimitSheet } from "@/components/TopPickLimitSheet";
 import { useJourney } from "@/components/JourneyProvider";
 import { useMounted } from "@/hooks/useMounted";
 import { cars } from "@/lib/cars";
 
 export default function LikePage() {
   const mounted = useMounted();
-  const { carProgress, setCarState, updateCarNotes } = useJourney();
+  const { carProgress, setCarState, replaceEarliestTopPick, updateCarNotes } =
+    useJourney();
   const [activeNotesCarId, setActiveNotesCarId] = useState<string | null>(null);
   const [activeDetailsCarId, setActiveDetailsCarId] = useState<string | null>(null);
   const [isLikedHelpOpen, setIsLikedHelpOpen] = useState(false);
+  const [replacementCandidateCarId, setReplacementCandidateCarId] = useState<
+    string | null
+  >(null);
   const [shouldPulseReviewTopPicks, setShouldPulseReviewTopPicks] =
     useState(false);
   const previousTopPicksCountRef = useRef<number | null>(null);
@@ -90,6 +95,20 @@ export default function LikePage() {
     [],
   );
 
+  const handleTopPickAction = (carId: string, isInTopPicks: boolean) => {
+    if (isInTopPicks) {
+      setCarState(carId, "liked");
+      return;
+    }
+
+    if (canEngageMore) {
+      setCarState(carId, "matched");
+      return;
+    }
+
+    setReplacementCandidateCarId(carId);
+  };
+
   if (!mounted) {
     return null;
   }
@@ -114,9 +133,9 @@ export default function LikePage() {
                     onClick={() => setIsLikedHelpOpen((current) => !current)}
                     aria-expanded={isLikedHelpOpen}
                     aria-label="How Liked cars work"
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.28)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel active:scale-95"
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.28)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel active:scale-95"
                   >
-                    <span aria-hidden="true" className="font-serif text-[1.7rem] font-bold italic leading-none">
+                    <span aria-hidden="true" className="font-serif text-[1.3rem] font-bold italic leading-none">
                       i
                     </span>
                   </button>
@@ -190,7 +209,7 @@ export default function LikePage() {
               </div>
             ) : null}
 
-            <div className="mt-6 rounded-[24px] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.015)_0%,rgba(255,255,255,0.005)_100%)] p-1.5 sm:p-2">
+            <div className="mt-6">
               <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {reviewCars.map((car) => {
                   const isInTopPicks = carProgress[car.id]?.state === "matched";
@@ -201,6 +220,17 @@ export default function LikePage() {
                       {...car}
                       topPickCount={engagedCount}
                       status={isInTopPicks ? "engaged" : "liked"}
+                      overlay={
+                        replacementCandidateCarId === car.id && !canEngageMore ? (
+                          <TopPickLimitSheet
+                            onConfirm={() => {
+                              replaceEarliestTopPick(car.id);
+                              setReplacementCandidateCarId(null);
+                            }}
+                            onCancel={() => setReplacementCandidateCarId(null)}
+                          />
+                        ) : null
+                      }
                       indicator={
                         carProgress[car.id]?.notes ? (
                           <p className="inline-flex items-center gap-2 text-sm text-slate-300">
@@ -235,26 +265,22 @@ export default function LikePage() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => {
-                                setCarState(
-                                  car.id,
-                                  isInTopPicks ? "liked" : "matched",
-                                );
-                              }}
-                              disabled={!isInTopPicks && !canEngageMore}
+                              onClick={() => handleTopPickAction(car.id, isInTopPicks)}
                               className={`app-button inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
                                 isInTopPicks
                                   ? "border-white/18 bg-transparent text-slate-100 hover:border-white/35 hover:bg-white/6 hover:text-white"
-                                  : canEngageMore
+                                  : canEngageMore || replacementCandidateCarId === car.id
                                     ? "border-accent bg-accent text-white hover:brightness-110"
-                                    : "cursor-not-allowed border-white/12 bg-white/8 text-slate-500"
+                                    : "border-white/18 bg-white/7 text-white hover:bg-white/10"
                               }`}
                             >
                               <Heart
                                 size={20}
                                 strokeWidth={0}
                                 className={`fill-current ${
-                                  isInTopPicks || canEngageMore
+                                  isInTopPicks ||
+                                  canEngageMore ||
+                                  replacementCandidateCarId === car.id
                                     ? "text-white"
                                     : "text-slate-500"
                                 }`}

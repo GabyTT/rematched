@@ -43,10 +43,6 @@ body {
     filter 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.page-panel {
-  will-change: transform, opacity;
-}
-
 .budget-range-input {
   -webkit-appearance: none;
   appearance: none;
@@ -142,47 +138,64 @@ body {
     0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
+[data-card-root="true"],
+.interactive-card-hover {
+  cursor: pointer;
+  transform-origin: center;
+}
+
+[data-card-root="true"]:hover,
+.interactive-card-hover:hover {
+  cursor: pointer;
+  transform: translateY(-8px) scale(1.015) !important;
+  box-shadow:
+    0 32px 72px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-card-root="true"]:hover .card-hover-image,
+.interactive-card-hover:hover .interactive-card-image {
+  transform: scale(1.05) !important;
+}
+
 .card-status-liked {
   border-width: 1px;
   border-style: solid;
   border-color: #d1133a;
-  box-shadow:
-    inset 0 0 0 1px rgba(209, 19, 58, 0.72),
-    0 18px 40px rgba(0, 0, 0, 0.28);
 }
 
 .card-status-passed {
   border-width: 1px;
   border-style: solid;
-  border-color: #8198ab;
-  box-shadow:
-    inset 0 0 0 1px rgba(129, 152, 171, 0.7),
-    0 18px 40px rgba(0, 0, 0, 0.28);
+  border-color: #cbd5e1;
+  opacity: 0.94;
 }
 
 .card-status-engaged {
-  border-width: 1px;
+  border-width: 2px;
   border-style: solid;
-  border-color: #f7f7f8;
+  border-color: #d1133a;
   box-shadow:
-    inset 0 0 0 1px rgba(247, 247, 248, 0.82),
     0 22px 52px rgba(0, 0, 0, 0.34),
-    0 0 0 1px rgba(247, 247, 248, 0.1),
-    0 0 24px rgba(247, 247, 248, 0.08);
+    0 0 0 2px #d1133a,
+    0 0 20px rgba(209, 19, 58, 0.18);
 }
 
 .interactive-panel[data-card-status="engaged"]:hover,
-.interactive-panel[data-card-status="engaged"]:focus-visible,
-.interactive-panel[data-card-status="engaged"]:focus-within {
+.interactive-card-hover[data-card-status="engaged"]:hover,
+[data-card-root="true"][data-card-status="engaged"]:hover {
+  transform: translateY(-6px) scale(1.02);
   box-shadow:
     0 28px 64px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(247, 247, 248, 0.14),
-    0 0 28px rgba(247, 247, 248, 0.1);
+    0 0 0 2px #d1133a,
+    0 0 26px rgba(209, 19, 58, 0.22);
 }
 
-.matches-swipe-deck .interactive-panel:is(:hover, :focus-within) {
+.matches-swipe-deck .interactive-panel:hover,
+.matches-swipe-deck .interactive-card-hover:hover,
+.matches-swipe-deck [data-card-root="true"]:hover {
   cursor: pointer;
-  transform: none !important;
+  transform: translateY(-2px) scale(1.005) !important;
   border-color: rgba(209, 19, 58, 0.18);
   box-shadow:
     0 14px 34px rgba(18, 31, 43, 0.14),
@@ -190,17 +203,19 @@ body {
     0 0 24px rgba(209, 19, 58, 0.08);
 }
 
-.matches-swipe-deck .interactive-panel:is(:hover, :focus-within) img {
+.matches-swipe-deck .interactive-panel:hover img,
+.matches-swipe-deck .interactive-card-hover:hover .interactive-card-image,
+.matches-swipe-deck [data-card-root="true"]:hover .card-hover-image {
   transform: scale(1.02) !important;
 }
 
 .home-stage-card:is(:hover, :focus-visible, :focus-within) {
-  transform: translateY(-8px) scale(1.01);
   border-color: rgba(209, 19, 58, 0.55);
   box-shadow:
     0 28px 64px rgba(0, 0, 0, 0.42),
     0 0 0 1px rgba(209, 19, 58, 0.18),
     0 0 28px rgba(209, 19, 58, 0.14);
+  animation: homeStageCardRise 170ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .home-stage-card:is(:hover, :focus-visible, :focus-within) .home-stage-icon-shell {
@@ -221,20 +236,30 @@ body {
 .helper-intro-card {
   position: relative;
   z-index: 10;
-  border-color: rgba(255, 255, 255, 0.1);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  border-color: rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
+    linear-gradient(180deg, rgba(209, 19, 58, 0.05), rgba(0, 0, 0, 0));
   transition:
     transform 240ms ease-out,
     border-color 240ms ease-out,
-    box-shadow 240ms ease-out;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    box-shadow 240ms ease-out,
+    background-image 240ms ease-out;
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
 }
 
 .helper-intro-card:is(:hover, :focus-visible, :focus-within) {
   z-index: 20;
-  transform: scale(1.01);
-  border-color: rgba(209, 19, 58, 0.42);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  transform: translateY(-8px) scale(1.015);
+  border-color: rgba(209, 19, 58, 0.38);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
+    linear-gradient(180deg, rgba(209, 19, 58, 0.08), rgba(0, 0, 0, 0));
+  box-shadow:
+    0 24px 54px rgba(0, 0, 0, 0.4),
+    0 0 28px rgba(209, 19, 58, 0.12);
 }
 
 .helper-intro-card-inner {
@@ -276,6 +301,27 @@ body {
 
 .home-stage-card-clicking {
   animation: homeStageCardSwipe 170ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes homeStageCardRise {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 18px 40px rgba(18, 31, 43, 0.09);
+  }
+
+  60% {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow:
+      0 28px 48px rgba(18, 31, 43, 0.16),
+      0 0 22px rgba(209, 19, 58, 0.12);
+  }
+
+  100% {
+    transform: translateY(-8px) scale(1.015);
+    box-shadow:
+      0 32px 56px rgba(18, 31, 43, 0.18),
+      0 0 26px rgba(209, 19, 58, 0.16);
+  }
 }
 
 @keyframes homeStageCardSwipe {
@@ -461,6 +507,18 @@ body {
   }
 }
 
+@keyframes topPickLimitSheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes heroCtaNudge {
   0% {
     transform: translateX(0) rotate(0deg);
@@ -531,8 +589,8 @@ body {
 
 @media (prefers-reduced-motion: no-preference) {
   .motion-rise-fade {
-    opacity: 0;
-    animation: riseFadeIn 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    opacity: 1;
+    animation: none;
   }
 
   .home-hero-cta {
@@ -542,6 +600,10 @@ body {
 
   .matches-help-sheet {
     animation: matchesHelpSheetIn 240ms ease-out;
+  }
+
+  .top-pick-limit-sheet {
+    animation: topPickLimitSheetIn 240ms ease-out;
   }
 
   .liked-help-panel {
@@ -597,6 +659,10 @@ body {
   }
 
   .matches-help-sheet {
+    animation: none;
+  }
+
+  .top-pick-limit-sheet {
     animation: none;
   }
 

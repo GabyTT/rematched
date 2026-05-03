@@ -21,6 +21,7 @@ export type CarJourneyState = null | "liked" | "matched" | "rejected";
 type CarProgress = {
   state: CarJourneyState;
   notes: string;
+  matchedAt: number | null;
 };
 
 type StoredCarJourneyState = CarJourneyState | "discover" | "none";
@@ -36,6 +37,7 @@ type JourneyContextValue = {
   isAuthenticated: boolean;
   isUnlockAlertsModalOpen: boolean;
   setCarState: (carId: string, state: CarJourneyState) => void;
+  replaceEarliestTopPick: (carId: string) => void;
   resetCarStatuses: () => void;
   resetJourneyData: () => void;
   updateCarNotes: (carId: string, notes: string) => void;
@@ -64,6 +66,7 @@ const COMPARE_KEY = "revmatched.compare";
 const AUTH_KEY = "revmatched.authenticated";
 const SESSION_LIKE_COUNT_KEY = "revmatched.session-like-count";
 const SESSION_UNLOCK_MODAL_SHOWN_KEY = "revmatched.session-unlock-modal-shown";
+const CAR_ORDER_BY_ID = new Map(cars.map((car, index) => [car.id, index]));
 
 const getStoredPreferences = () => {
   if (typeof window === "undefined") {
@@ -115,6 +118,7 @@ const getDefaultProgress = () =>
     result[car.id] = {
       state: null,
       notes: "",
+      matchedAt: null,
     };
     return result;
   }, {});
@@ -135,6 +139,11 @@ const getStoredProgress = () => {
         carId,
         {
           ...value,
+          matchedAt:
+            typeof value.matchedAt === "number" &&
+            Number.isFinite(value.matchedAt)
+              ? value.matchedAt
+              : null,
           state:
             value.state === "discover" || value.state === "none"
               ? null
@@ -241,6 +250,12 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
         [carId]: {
           ...current[carId],
           state: nextState,
+          matchedAt:
+            nextState === "matched"
+              ? previousState === "matched"
+                ? current[carId]?.matchedAt ?? Date.now()
+                : Date.now()
+              : null,
         },
       };
       persistProgress(next);
@@ -305,6 +320,78 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const replaceEarliestTopPick = (carId: string) => {
+    const previousState = carProgress[carId]?.state ?? null;
+    const removedTopPickId =
+      Object.entries(carProgress)
+        .filter(([id, value]) => value.state === "matched" && id !== carId)
+        .sort(([firstId, firstValue], [secondId, secondValue]) => {
+          const firstMatchedAt = firstValue.matchedAt ?? Number.MAX_SAFE_INTEGER;
+          const secondMatchedAt = secondValue.matchedAt ?? Number.MAX_SAFE_INTEGER;
+
+          if (firstMatchedAt !== secondMatchedAt) {
+            return firstMatchedAt - secondMatchedAt;
+          }
+
+          return (
+            (CAR_ORDER_BY_ID.get(firstId) ?? Number.MAX_SAFE_INTEGER) -
+            (CAR_ORDER_BY_ID.get(secondId) ?? Number.MAX_SAFE_INTEGER)
+          );
+        })[0]?.[0] ?? null;
+
+    setCarProgress((current) => {
+      const currentState = current[carId]?.state ?? null;
+
+      if (currentState === "matched") {
+        return current;
+      }
+
+      const next = {
+        ...current,
+      };
+
+      if (removedTopPickId) {
+        next[removedTopPickId] = {
+          ...current[removedTopPickId],
+          state: "liked",
+          matchedAt: null,
+        };
+      }
+
+      next[carId] = {
+        ...current[carId],
+        state: "matched",
+        matchedAt: Date.now(),
+      };
+
+      persistProgress(next);
+      return next;
+    });
+
+    if (removedTopPickId) {
+      setCompareCarIds((current) => {
+        if (!current.includes(removedTopPickId as string)) {
+          return current;
+        }
+
+        const next = current.filter((id) => id !== removedTopPickId);
+        window.localStorage.setItem(COMPARE_KEY, JSON.stringify(next));
+        return next;
+      });
+    }
+
+    if (previousState !== "matched") {
+      window.dispatchEvent(
+        new CustomEvent("revmatched:roadmap-transition", {
+          detail: {
+            from: previousState === "liked" ? "like" : "discover",
+            to: "match",
+          },
+        }),
+      );
+    }
+  };
+
   const updateCarNotes = (carId: string, notes: string) => {
     setCarProgress((current) => {
       const next = {
@@ -327,6 +414,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
           {
             ...value,
             state: null,
+            matchedAt: null,
           },
         ]),
       ) as Record<string, CarProgress>;
@@ -399,6 +487,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         isUnlockAlertsModalOpen,
         setCarState,
+        replaceEarliestTopPick,
         resetCarStatuses,
         resetJourneyData,
         updateCarNotes,

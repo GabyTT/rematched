@@ -96,7 +96,6 @@ export function Roadmap({ step }: RoadmapProps) {
   const matchCount = Object.values(carProgress).filter(
     (value) => value.state === "matched",
   ).length;
-  const topPicksLabel = matchCount === 1 ? "The One" : "Top Picks";
   const stepIndex = {
     define: 0,
     discover: 1,
@@ -184,7 +183,7 @@ export function Roadmap({ step }: RoadmapProps) {
   }, [clearTransitionTimers]);
 
   return (
-    <section className="sticky top-0 z-40 border-b border-white/5 bg-[linear-gradient(180deg,rgba(3,11,17,0.92)_0%,rgba(3,11,17,0.76)_100%)] backdrop-blur">
+    <section className="sticky top-0 z-40 border-b border-white/5 bg-[linear-gradient(180deg,rgba(3,11,17,0.92)_0%,rgba(3,11,17,0.76)_100%)]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-5 py-3 sm:px-8 lg:px-12 lg:py-4">
         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-400">
           Journey roadmap
@@ -230,12 +229,12 @@ export function Roadmap({ step }: RoadmapProps) {
                       ? mounted
                         ? likeCount
                         : 0
-                      : item.key === "match"
+                    : item.key === "match"
                         ? mounted
                           ? matchCount
                           : 0
                         : null;
-                const label = item.key === "match" ? topPicksLabel : item.title;
+                const label = item.title;
                 const iconShellClasses = isActive
                   ? "border-[#E7EDF3] bg-[#F7F7F8] text-[#D1133A]"
                   : isCompleted

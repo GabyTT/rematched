@@ -19,7 +19,8 @@ export function SponsorCard({ ad }: SponsorCardProps) {
   return (
     <article
       aria-label={`Sponsored utility card from ${sponsorName}`}
-      className="group interactive-panel page-panel flex h-full flex-col overflow-hidden rounded-[28px] border border-emerald-500/70 bg-panel shadow-[0_18px_40px_rgba(0,0,0,0.28)] transition duration-300 hover:-translate-y-1 hover:border-emerald-400 hover:shadow-[0_28px_60px_rgba(0,0,0,0.45),0_0_24px_rgba(16,185,129,0.12)]"
+      data-card-root="true"
+      className="group interactive-card-hover interactive-panel page-panel flex h-full flex-col overflow-hidden rounded-[28px] border border-emerald-500/70 bg-panel shadow-[0_18px_40px_rgba(0,0,0,0.28)] transition duration-300 hover:border-emerald-400 hover:shadow-[0_28px_60px_rgba(0,0,0,0.45),0_0_24px_rgba(16,185,129,0.12)]"
     >
       <div className="relative aspect-[16/9] overflow-hidden">
         <Image
@@ -28,9 +29,9 @@ export function SponsorCard({ ad }: SponsorCardProps) {
           fill
           sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw"
           draggable={false}
-          className="pointer-events-none block object-cover transition duration-500 group-hover:scale-105"
+          className="card-hover-image interactive-card-image pointer-events-none block object-cover transition duration-500"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/18 to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/18 to-transparent" />
         <div className="absolute left-4 top-4 z-10 inline-flex min-h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-semibold uppercase tracking-wide text-slate-200 shadow-[0_8px_18px_rgba(0,0,0,0.18)] backdrop-blur-sm transition hover:bg-white/10">
           Sponsored
         </div>

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   CarFront,
+  Check,
   DollarSign,
   Search as SearchIcon,
   SlidersHorizontal,
@@ -43,8 +44,8 @@ const helperOptionButtonClass =
   "inline-flex min-h-16 justify-center rounded-full border-2 border-[#D1133A] bg-white px-5 py-4 text-base font-semibold text-[#111827] transition hover:bg-[rgba(209,19,58,0.05)]";
 const helperNeutralPillClass =
   "inline-flex items-center gap-2 rounded-full border-2 border-[#D1133A] bg-white px-4 py-2 text-sm font-semibold text-[#111827] transition hover:bg-[rgba(209,19,58,0.05)]";
-const BUDGET_SLIDER_MIN = 50000;
-const BUDGET_SLIDER_MAX = 500000;
+const BUDGET_SLIDER_MIN = 5000;
+const BUDGET_SLIDER_MAX = 2000000;
 const BUDGET_SLIDER_STEP = 5000;
 const DEFAULT_MIN_BUDGET = 80000;
 const DEFAULT_MAX_BUDGET = 300000;
@@ -69,9 +70,34 @@ const getSavedPreferenceSnapshot = (
   model: preferenceValues.model.trim(),
 });
 
-type BuyerGuideStep = "intro" | "question-1" | "question-2" | "result";
-type BuyerPriority = "practicality" | "style";
-type BuyerNeed = "easy" | "room";
+type BuyerGuideStep = "intro" | "question" | "result";
+type RecommendedCarType =
+  | "sedan"
+  | "hatchback"
+  | "compact-suv"
+  | "large-suv"
+  | "pickup"
+  | "van";
+type HelperQuestionKey =
+  | "people"
+  | "driving"
+  | "cargo"
+  | "fuel"
+  | "parking"
+  | "style";
+type HelperScores = Partial<Record<RecommendedCarType, number>>;
+type HelperAnswerOption = {
+  id: string;
+  label: string;
+  scores: HelperScores;
+  insight: string;
+};
+type HelperQuestion = {
+  key: HelperQuestionKey;
+  prompt: string;
+  options: HelperAnswerOption[];
+};
+type HelperAnswers = Record<HelperQuestionKey, string | null>;
 type BudgetHelperStep =
   | "intro"
   | "question-1"
@@ -89,45 +115,338 @@ type DefineCardBounds = {
   width: number;
 };
 
-type BuyerTypeResult = {
-  type: string;
-  body: string;
-  suggestedType: "sedan" | "suv";
-  suggestedTypeLabel: "Sedan" | "SUV";
-  considering: string;
+type HelperRecommendationResult = {
+  bestType: RecommendedCarType;
+  bestTypeLabel: string;
+  bestScore: number;
+  confidencePercent: number;
+  alsoConsider: RecommendedCarType;
+  alsoConsiderLabel: string;
+  defineValue: string;
+  applyTypeLabel: string;
+  bullets: string[];
 };
 
-const buyerTypeResults: Record<`${BuyerPriority}-${BuyerNeed}`, BuyerTypeResult> =
+const recommendedCarTypeMeta: Record<
+  RecommendedCarType,
   {
-    "practicality-easy": {
-      type: "Smart Compact",
-      body: "You seem to want something practical, manageable, and easy to live with day to day. A smaller vehicle that feels sensible and straightforward may suit you best.",
-      suggestedType: "sedan",
-      suggestedTypeLabel: "Sedan",
-      considering: "Hatchback, Compact Crossover",
-    },
-    "practicality-room": {
-      type: "Utility-First",
-      body: "You seem to value room, flexibility, and everyday usefulness. A vehicle with more space and versatility may be the best place to start.",
-      suggestedType: "suv",
-      suggestedTypeLabel: "SUV",
-      considering: "Crossover, Pickup",
-    },
-    "style-easy": {
-      type: "City Statement",
-      body: "You seem to want something that feels sharp, stylish, and enjoyable without taking up more space than you need. A sleeker everyday vehicle may be your best fit.",
-      suggestedType: "sedan",
-      suggestedTypeLabel: "Sedan",
-      considering: "Hatchback, Compact Crossover",
-    },
-    "style-room": {
-      type: "Road Presence",
-      body: "You seem to want comfort, space, and something with a stronger presence on the road. A roomier vehicle with a bigger feel may suit you best.",
-      suggestedType: "suv",
-      suggestedTypeLabel: "SUV",
-      considering: "Crossover, Sedan",
-    },
-  };
+    label: string;
+    defineValue: string;
+    applyTypeLabel: string;
+  }
+> = {
+  sedan: { label: "Sedan", defineValue: "sedan", applyTypeLabel: "Sedan" },
+  hatchback: {
+    label: "Hatchback",
+    defineValue: "hatchback",
+    applyTypeLabel: "Hatchback",
+  },
+  "compact-suv": {
+    label: "Compact SUV",
+    defineValue: "suv",
+    applyTypeLabel: "SUV",
+  },
+  "large-suv": {
+    label: "Large SUV",
+    defineValue: "suv",
+    applyTypeLabel: "SUV",
+  },
+  pickup: { label: "Pickup", defineValue: "pickup", applyTypeLabel: "Pickup" },
+  van: { label: "Van", defineValue: "van", applyTypeLabel: "Van" },
+};
+
+const recommendedCarTypeOrder: RecommendedCarType[] = [
+  "sedan",
+  "hatchback",
+  "compact-suv",
+  "large-suv",
+  "pickup",
+  "van",
+];
+
+const helperQuestions: HelperQuestion[] = [
+  {
+    key: "people",
+    prompt: "How many people are usually in the car?",
+    options: [
+      {
+        id: "just-me",
+        label: "Just me",
+        scores: { sedan: 2, hatchback: 3, "compact-suv": 1 },
+        insight:
+          "Your day-to-day passenger count stays light, so a smaller footprint can work in your favor.",
+      },
+      {
+        id: "two-to-three",
+        label: "2–3 people",
+        scores: { sedan: 2, hatchback: 2, "compact-suv": 2 },
+        insight:
+          "You usually carry a small crew, which gives you room to balance comfort with efficiency.",
+      },
+      {
+        id: "four-to-five",
+        label: "4–5 people",
+        scores: { sedan: 1, "compact-suv": 3, "large-suv": 2, van: 1 },
+        insight:
+          "Your typical passenger load points toward something that can stay comfortable when the seats fill up.",
+      },
+      {
+        id: "five-plus",
+        label: "5+ people",
+        scores: { "compact-suv": 1, "large-suv": 3, van: 4 },
+        insight:
+          "You need real people space, so room and flexibility matter more than a compact footprint.",
+      },
+    ],
+  },
+  {
+    key: "driving",
+    prompt: "What kind of driving do you do most?",
+    options: [
+      {
+        id: "city",
+        label: "City / short trips",
+        scores: {
+          sedan: 2,
+          hatchback: 3,
+          "compact-suv": 1,
+          "large-suv": -1,
+          pickup: -1,
+          van: -1,
+        },
+        insight:
+          "Your routine leans toward shorter city runs, so agility and ease around town matter.",
+      },
+      {
+        id: "highway",
+        label: "Highway commuting",
+        scores: { sedan: 3, hatchback: 1, "compact-suv": 2, "large-suv": 1 },
+        insight:
+          "You spend a lot of time cruising at speed, which rewards comfort, composure, and steady efficiency.",
+      },
+      {
+        id: "mixed",
+        label: "Mixed roads",
+        scores: {
+          sedan: 1,
+          hatchback: 1,
+          "compact-suv": 3,
+          "large-suv": 2,
+          pickup: 1,
+        },
+        insight:
+          "Your driving mix calls for something versatile enough to feel confident on different roads.",
+      },
+      {
+        id: "rough",
+        label: "Rough roads",
+        scores: {
+          sedan: -1,
+          hatchback: -1,
+          "compact-suv": 3,
+          "large-suv": 3,
+          pickup: 4,
+        },
+        insight:
+          "You deal with rougher surfaces, so strength, ride height, and toughness naturally move up the list.",
+      },
+    ],
+  },
+  {
+    key: "cargo",
+    prompt: "What do you usually carry?",
+    options: [
+      {
+        id: "groceries",
+        label: "Groceries / normal errands",
+        scores: {
+          sedan: 2,
+          hatchback: 2,
+          "compact-suv": 2,
+          "large-suv": 1,
+        },
+        insight:
+          "Your cargo needs are everyday and manageable, so you do not need to overbuy for occasional tasks.",
+      },
+      {
+        id: "sports",
+        label: "Sports / small equipment",
+        scores: {
+          sedan: 1,
+          hatchback: 2,
+          "compact-suv": 3,
+          "large-suv": 2,
+          pickup: 1,
+        },
+        insight:
+          "You need a bit more flexibility for gear, which favors vehicles that can stretch without feeling oversized.",
+      },
+      {
+        id: "tools",
+        label: "Tools / heavy loads",
+        scores: {
+          sedan: -1,
+          hatchback: -1,
+          "compact-suv": 1,
+          "large-suv": 2,
+          pickup: 4,
+          van: 2,
+        },
+        insight:
+          "What you carry is heavier-duty, so cargo capability and toughness should pull more weight in the decision.",
+      },
+      {
+        id: "family-items",
+        label: "Large family items",
+        scores: { "compact-suv": 2, "large-suv": 3, pickup: 1, van: 4 },
+        insight:
+          "Bulky family cargo points toward something that can handle bigger items without becoming stressful to pack.",
+      },
+    ],
+  },
+  {
+    key: "fuel",
+    prompt: "How important is fuel efficiency?",
+    options: [
+      {
+        id: "very-important",
+        label: "Very important",
+        scores: {
+          sedan: 3,
+          hatchback: 4,
+          "compact-suv": 1,
+          "large-suv": -2,
+          pickup: -2,
+          van: -1,
+        },
+        insight:
+          "You want the running costs to stay lean, so efficiency deserves a real seat at the table.",
+      },
+      {
+        id: "balanced",
+        label: "Balanced",
+        scores: {
+          sedan: 2,
+          hatchback: 2,
+          "compact-suv": 2,
+          "large-suv": 1,
+          pickup: 1,
+          van: 1,
+        },
+        insight:
+          "You are balancing running costs with day-to-day practicality instead of optimizing around one extreme.",
+      },
+      {
+        id: "not-a-concern",
+        label: "Not a concern",
+        scores: { "compact-suv": 1, "large-suv": 2, pickup: 2, van: 1 },
+        insight:
+          "You have room to prioritize space, strength, or presence over maximizing fuel savings.",
+      },
+    ],
+  },
+  {
+    key: "parking",
+    prompt: "What matters more day to day?",
+    options: [
+      {
+        id: "easy-parking",
+        label: "Easy parking",
+        scores: {
+          sedan: 2,
+          hatchback: 4,
+          "compact-suv": 1,
+          "large-suv": -2,
+          pickup: -2,
+          van: -1,
+        },
+        insight:
+          "You want something that stays easy to place, park, and live with in tighter spaces.",
+      },
+      {
+        id: "balanced-size",
+        label: "Balanced size",
+        scores: {
+          sedan: 2,
+          hatchback: 2,
+          "compact-suv": 2,
+          "large-suv": 1,
+          pickup: 1,
+          van: 1,
+        },
+        insight:
+          "You are aiming for a middle ground that feels capable without being too bulky day to day.",
+      },
+      {
+        id: "more-space",
+        label: "More space / presence",
+        scores: {
+          hatchback: -1,
+          "compact-suv": 2,
+          "large-suv": 4,
+          pickup: 3,
+          van: 2,
+        },
+        insight:
+          "You would rather have extra room and road presence than squeeze everything into the smallest package.",
+      },
+    ],
+  },
+  {
+    key: "style",
+    prompt: "Which style feels more like you?",
+    options: [
+      {
+        id: "sleek",
+        label: "Sleek / polished",
+        scores: { sedan: 3, hatchback: 1, "compact-suv": 1, "large-suv": 1 },
+        insight:
+          "You are drawn to a cleaner, more polished look, which nudges the recommendation toward a more refined shape.",
+      },
+      {
+        id: "small-practical",
+        label: "Small / practical",
+        scores: { sedan: 1, hatchback: 4, "compact-suv": 1 },
+        insight:
+          "You like things to feel practical and unfussy, which is a strong signal toward compact usability.",
+      },
+      {
+        id: "rugged",
+        label: "Rugged / strong",
+        scores: { "compact-suv": 2, "large-suv": 2, pickup: 4 },
+        insight:
+          "You want something with strength and attitude, so a tougher shape naturally moves up.",
+      },
+      {
+        id: "family-comfort",
+        label: "Family / comfort",
+        scores: { sedan: 1, "compact-suv": 3, "large-suv": 3, van: 4 },
+        insight:
+          "You are optimizing around comfort and family ease, which favors vehicles that make shared routines simpler.",
+      },
+    ],
+  },
+];
+
+const helperInitialAnswers: HelperAnswers = {
+  people: null,
+  driving: null,
+  cargo: null,
+  fuel: null,
+  parking: null,
+  style: null,
+};
+
+const helperTieBreakOrder: HelperQuestionKey[] = [
+  "people",
+  "cargo",
+  "driving",
+  "fuel",
+  "parking",
+  "style",
+];
+
+const HELPER_CONFIDENCE_MAX_SCORE = 24;
 
 const estimateLoanPrincipal = (
   monthlyPayment: number,
@@ -206,8 +525,9 @@ export function FindTheOnePage() {
   const [brandQuery, setBrandQuery] = useState("");
   const [model, setModel] = useState(preferences.model);
   const [helperStep, setHelperStep] = useState<BuyerGuideStep>("intro");
-  const [buyerPriority, setBuyerPriority] = useState<BuyerPriority | null>(null);
-  const [buyerNeed, setBuyerNeed] = useState<BuyerNeed | null>(null);
+  const [helperQuestionIndex, setHelperQuestionIndex] = useState(0);
+  const [helperAnswers, setHelperAnswers] =
+    useState<HelperAnswers>(helperInitialAnswers);
   const [helperPendingSelection, setHelperPendingSelection] = useState<string | null>(null);
   const [helperTransitioning, setHelperTransitioning] = useState(false);
   const [budgetHelperStep, setBudgetHelperStep] =
@@ -555,18 +875,164 @@ export function FindTheOnePage() {
     };
   }, [handleSaveAndDiscover]);
 
-  const helperResult =
-    buyerPriority && buyerNeed
-      ? buyerTypeResults[`${buyerPriority}-${buyerNeed}`]
-      : null;
-  const answeredBuyerQuestions =
-    (buyerPriority ? 1 : 0) + (buyerNeed ? 1 : 0);
-  const buyerGuideProgressWidth =
-    answeredBuyerQuestions === 0
-      ? "0%"
-      : answeredBuyerQuestions === 1
-        ? "50%"
-        : "100%";
+  const helperSelectedOptions = useMemo(
+    () =>
+      helperQuestions.reduce<
+        Partial<Record<HelperQuestionKey, HelperAnswerOption>>
+      >((result, question) => {
+        const answerId = helperAnswers[question.key];
+        if (!answerId) {
+          return result;
+        }
+
+        const option = question.options.find((item) => item.id === answerId);
+        if (option) {
+          result[question.key] = option;
+        }
+
+        return result;
+      }, {}),
+    [helperAnswers],
+  );
+  const helperScores = useMemo(
+    () =>
+      helperQuestions.reduce<Record<RecommendedCarType, number>>(
+        (result, question) => {
+          const selectedOption = helperSelectedOptions[question.key];
+          if (!selectedOption) {
+            return result;
+          }
+
+          recommendedCarTypeOrder.forEach((type) => {
+            result[type] += selectedOption.scores[type] ?? 0;
+          });
+
+          return result;
+        },
+        {
+          sedan: 0,
+          hatchback: 0,
+          "compact-suv": 0,
+          "large-suv": 0,
+          pickup: 0,
+          van: 0,
+        },
+      ),
+    [helperSelectedOptions],
+  );
+  const helperQuestionScoreByType = useMemo(
+    () =>
+      helperQuestions.reduce<
+        Record<HelperQuestionKey, Record<RecommendedCarType, number>>
+      >((result, question) => {
+        const selectedOption = helperSelectedOptions[question.key];
+        result[question.key] = recommendedCarTypeOrder.reduce<
+          Record<RecommendedCarType, number>
+        >(
+          (typeResult, type) => {
+            typeResult[type] = selectedOption?.scores[type] ?? 0;
+            return typeResult;
+          },
+          {
+            sedan: 0,
+            hatchback: 0,
+            "compact-suv": 0,
+            "large-suv": 0,
+            pickup: 0,
+            van: 0,
+          },
+        );
+        return result;
+      }, {} as Record<HelperQuestionKey, Record<RecommendedCarType, number>>),
+    [helperSelectedOptions],
+  );
+  const sortedHelperTypes = useMemo(() => {
+    const compareTypes = (
+      left: RecommendedCarType,
+      right: RecommendedCarType,
+    ) => {
+      const totalDifference = helperScores[right] - helperScores[left];
+      if (totalDifference !== 0) {
+        return totalDifference;
+      }
+
+      for (const questionKey of helperTieBreakOrder) {
+        const questionDifference =
+          helperQuestionScoreByType[questionKey][right] -
+          helperQuestionScoreByType[questionKey][left];
+        if (questionDifference !== 0) {
+          return questionDifference;
+        }
+      }
+
+      return (
+        recommendedCarTypeOrder.indexOf(left) -
+        recommendedCarTypeOrder.indexOf(right)
+      );
+    };
+
+    return [...recommendedCarTypeOrder].sort(compareTypes);
+  }, [helperQuestionScoreByType, helperScores]);
+  const helperResult = useMemo<HelperRecommendationResult | null>(() => {
+    const allAnswered = helperQuestions.every((question) =>
+      Boolean(helperAnswers[question.key]),
+    );
+    if (!allAnswered) {
+      return null;
+    }
+
+    const bestType = sortedHelperTypes[0];
+    const alsoConsider = sortedHelperTypes[1] ?? sortedHelperTypes[0];
+    const bestTypeMeta = recommendedCarTypeMeta[bestType];
+    const alsoConsiderMeta = recommendedCarTypeMeta[alsoConsider];
+    const bestScore = helperScores[bestType];
+    const confidencePercent = Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round((bestScore / HELPER_CONFIDENCE_MAX_SCORE) * 100),
+      ),
+    );
+    const bullets = helperQuestions
+      .map((question, index) => {
+        const selectedOption = helperSelectedOptions[question.key];
+        return {
+          contribution: selectedOption?.scores[bestType] ?? 0,
+          index,
+          insight: selectedOption?.insight ?? "",
+        };
+      })
+      .sort((left, right) => {
+        const contributionDifference = right.contribution - left.contribution;
+        if (contributionDifference !== 0) {
+          return contributionDifference;
+        }
+
+        return left.index - right.index;
+      })
+      .filter((item) => item.insight)
+      .slice(0, 3)
+      .map((item) => item.insight);
+
+    return {
+      bestType,
+      bestTypeLabel: bestTypeMeta.label,
+      bestScore,
+      confidencePercent,
+      alsoConsider,
+      alsoConsiderLabel: alsoConsiderMeta.label,
+      defineValue: bestTypeMeta.defineValue,
+      applyTypeLabel: bestTypeMeta.applyTypeLabel,
+      bullets,
+    };
+  }, [helperAnswers, helperScores, helperSelectedOptions, sortedHelperTypes]);
+  const answeredBuyerQuestions = helperQuestions.reduce(
+    (count, question) => count + (helperAnswers[question.key] ? 1 : 0),
+    0,
+  );
+  const buyerGuideProgressWidth = `${(answeredBuyerQuestions / helperQuestions.length) * 100}%`;
+  const currentHelperQuestion =
+    helperStep === "question" ? helperQuestions[helperQuestionIndex] : null;
   const answeredBudgetQuestions =
     budgetHelperStep === "result"
       ? 4
@@ -580,15 +1046,11 @@ export function FindTheOnePage() {
   const budgetGuideProgressWidth = `${(answeredBudgetQuestions / 4) * 100}%`;
   const hasSpecificVehicleType =
     vehicleType.trim() !== "" && vehicleType.trim().toLowerCase() !== "all";
-  const helperPrimaryLabel = helperResult
-    ? hasSpecificVehicleType && vehicleType !== helperResult.suggestedType
-      ? `Replace current type with ${helperResult.suggestedTypeLabel}`
-      : `Use ${helperResult.suggestedTypeLabel} as a starting point`
-    : "";
+  const helperPrimaryLabel = "Use this car type";
   const helperCardBaseClassName =
     "relative rounded-[24px] border border-[rgba(15,23,42,0.08)] bg-white p-5 text-[#111827] shadow-[0_20px_50px_rgba(0,0,0,0.15)] transition-[background-color,color,box-shadow] duration-200 sm:p-6";
   const helperIntroCardClassName =
-    "lg:flex-1 lg:min-h-[200px] lg:max-h-[280px]";
+    "lg:flex-1 lg:min-h-[220px] lg:max-h-[300px]";
   const isHelperWizardOpen =
     helperStep !== "intro" || budgetHelperStep !== "intro";
 
@@ -598,13 +1060,15 @@ export function FindTheOnePage() {
     }
 
     const isReplacingType =
-      hasSpecificVehicleType && vehicleType !== helperResult.suggestedType;
+      hasSpecificVehicleType && vehicleType !== helperResult.defineValue;
 
-    setVehicleType(helperResult.suggestedType);
+    setVehicleType(helperResult.defineValue);
     setFormConfirmation(
-      isReplacingType
-        ? `${helperResult.suggestedTypeLabel} replaced your current Define type`
-        : `${helperResult.suggestedTypeLabel} added to your Define preferences`,
+      helperResult.applyTypeLabel !== helperResult.bestTypeLabel
+        ? `${helperResult.applyTypeLabel} filter added based on your ${helperResult.bestTypeLabel} match`
+        : isReplacingType
+          ? `${helperResult.bestTypeLabel} replaced your current Define type`
+          : `${helperResult.bestTypeLabel} added to your Define preferences`,
     );
     resetHelper();
   };
@@ -615,8 +1079,8 @@ export function FindTheOnePage() {
       helperTransitionTimeoutRef.current = null;
     }
     setHelperStep("intro");
-    setBuyerPriority(null);
-    setBuyerNeed(null);
+    setHelperQuestionIndex(0);
+    setHelperAnswers(helperInitialAnswers);
     setHelperPendingSelection(null);
     setHelperTransitioning(false);
   };
@@ -635,7 +1099,7 @@ export function FindTheOnePage() {
         setHelperPendingSelection(null);
         setHelperTransitioning(false);
         helperTransitionTimeoutRef.current = null;
-      }, 480);
+      }, 250);
     },
     [helperTransitioning],
   );
@@ -760,10 +1224,10 @@ export function FindTheOnePage() {
                 <button
                   type="button"
                   onClick={() => setIsDefineHelpOpen(true)}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.24)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.32)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/55 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:scale-95"
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.24)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.32)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/55 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:scale-95"
                   aria-label="How Define preferences work"
                 >
-                  <span aria-hidden="true" className="font-serif text-[1.7rem] font-bold italic leading-none">
+                  <span aria-hidden="true" className="font-serif text-[1.3rem] font-bold italic leading-none">
                     i
                   </span>
                 </button>
@@ -902,8 +1366,10 @@ export function FindTheOnePage() {
               >
                 <option value="">All vehicle types</option>
                 <option value="sedan">Sedan</option>
+                <option value="hatchback">Hatchback</option>
                 <option value="suv">SUV</option>
                 <option value="pickup">Pickup</option>
+                <option value="van">Van</option>
                 <option value="luxury">Luxury</option>
               </select>
             </label>
@@ -1009,14 +1475,16 @@ export function FindTheOnePage() {
           }`}
         >
           <section
+            data-card-root={helperStep === "intro" ? "true" : undefined}
             className={
               helperStep === "intro"
-                ? `helper-intro-card relative ${helperIntroCardClassName} cursor-pointer rounded-[24px] border p-[1px] text-slate-100`
+                ? `interactive-card-hover helper-intro-card relative ${helperIntroCardClassName} cursor-pointer rounded-[24px] border p-[1px] text-slate-100`
                 : `${helperCardBaseClassName} relative z-50`
             }
             onClick={() => {
               if (helperStep === "intro") {
-                setHelperStep("question-1");
+                setHelperQuestionIndex(0);
+                setHelperStep("question");
               }
             }}
             role={helperStep === "intro" ? "button" : undefined}
@@ -1027,100 +1495,65 @@ export function FindTheOnePage() {
                 (event.key === "Enter" || event.key === " ")
               ) {
                 event.preventDefault();
-                setHelperStep("question-1");
+                setHelperQuestionIndex(0);
+                setHelperStep("question");
               }
             }}
           >
             {helperStep === "intro" ? (
-              <div className="helper-intro-card-inner flex min-h-[15.25rem] flex-col overflow-hidden rounded-[23px] lg:h-full">
-                <div className="helper-intro-strip relative h-[80px] min-h-[76px] max-h-[88px] overflow-hidden bg-[linear-gradient(180deg,rgba(14,24,34,0.96)_0%,rgba(8,16,23,0.94)_100%)]">
+              <div className="helper-intro-card-inner flex min-h-[16rem] flex-col overflow-hidden rounded-[23px] lg:h-full">
+                <div className="relative flex min-h-[16rem] flex-1 overflow-hidden bg-[#091019]">
                   <Image
-                    src="/car-type-helper-lineup.png"
+                    src="/define-helper-car-type.png"
                     alt=""
                     fill
                     sizes="(min-width: 1024px) 28vw, 100vw"
-                    className="object-cover object-center opacity-[0.42] brightness-[0.82] contrast-[1.04] saturate-[0.38]"
+                    className="card-hover-image interactive-card-image object-cover object-center opacity-[0.98] brightness-[0.9] contrast-[1.04] saturate-[0.96]"
                     aria-hidden="true"
                   />
-                  <div className="helper-intro-strip-overlay absolute inset-0 bg-[linear-gradient(180deg,rgba(4,10,16,0.16)_0%,rgba(4,10,16,0.28)_44%,rgba(7,14,20,0.78)_100%)]" />
-                </div>
-                <div className="flex flex-1 flex-col bg-[linear-gradient(180deg,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0.02)_100%)] px-5 py-4 sm:px-6 sm:py-5">
-                  <div className="inline-flex w-full items-center gap-3">
-                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#D1133A]/35 bg-[#D1133A] text-white shadow-[0_0_14px_rgba(209,19,58,0.18)]">
-                      <CarFront size={16} strokeWidth={2.4} />
-                    </span>
-                    <p className="helper-intro-kicker flex-1 text-[0.9rem] font-semibold uppercase tracking-[0.15em] text-slate-200 sm:text-[0.98rem]">
-                      Need help with Car Type?
-                    </p>
-                  </div>
-                  <p className="helper-intro-body mt-3 max-w-[16.5rem] text-[1.18rem] font-semibold leading-[1.18] text-white sm:text-[1.34rem]">
-                    Choose the type of vehicle that fits your lifestyle best.
-                  </p>
-                  <div className="mt-auto flex justify-end pt-4">
-                    <span className="helper-intro-cta text-[0.78rem] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:text-[0.82rem]">
-                      Start car type guide
-                    </span>
+                  <div className="pointer-events-none helper-intro-strip-overlay absolute inset-0 bg-[linear-gradient(90deg,rgba(5,9,14,0.42)_0%,rgba(7,11,17,0.39)_28%,rgba(8,12,18,0.22)_52%,rgba(8,12,18,0.08)_74%,rgba(8,12,18,0.04)_100%)]" />
+                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,11,17,0.05)_0%,rgba(8,12,18,0.02)_36%,rgba(8,12,18,0.17)_100%)]" />
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(209,19,58,0.06),transparent_28%),radial-gradient(circle_at_84%_20%,rgba(255,184,107,0.06),transparent_24%)]" />
+
+                  <div className="relative z-10 flex w-full flex-col justify-between p-5 sm:p-6">
+                    <div className="max-w-[15rem]">
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#D1133A]/35 bg-[#D1133A] text-white shadow-[0_0_18px_rgba(209,19,58,0.26)]">
+                        <CarFront size={16} strokeWidth={2.4} />
+                      </span>
+                      <p className="helper-intro-kicker mt-4 text-[0.82rem] font-semibold uppercase tracking-[0.2em] text-white/78 sm:text-[0.88rem]">
+                        Need help with
+                      </p>
+                      <p className="mt-2 text-[2rem] font-semibold leading-[0.92] tracking-[0.02em] text-white sm:text-[2.2rem]">
+                        CAR TYPE?
+                      </p>
+                      <div className="mt-4 h-[2px] w-10 rounded-full bg-[#D1133A]" />
+                      <p className="mt-4 text-sm leading-6 text-white/82 sm:text-[0.95rem]">
+                        Answer a few lifestyle questions and we&apos;ll recommend the best fit.
+                      </p>
+                    </div>
+                    <div className="pt-6">
+                      <span className="helper-intro-cta inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#D1133A] shadow-[0_12px_24px_rgba(0,0,0,0.22)] sm:text-[0.98rem]">
+                        Start Car Type Guide
+                        <span aria-hidden="true" className="text-base leading-none">
+                          →
+                        </span>
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             ) : null}
 
-            {helperStep === "question-1" ? (
-              <div className={`text-[#17212b] ${helperTransitioning ? "helper-question-exit" : "helper-question-enter"}`}>
-                <HelperStepHeader label="Question 1 of 2" onClose={resetHelper} />
-                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[#dbe5dc]">
-                  <div
-                    className="h-full rounded-full bg-[#5e8a72] transition-[width] duration-300"
-                    style={{ width: buyerGuideProgressWidth }}
-                  />
-                </div>
-                <h2 className="mt-3 text-2xl font-semibold leading-tight text-[#111827]">
-                  Which matters more for this car?
-                </h2>
-                <div className="mt-6 grid gap-3">
-                  <button
-                    type="button"
-                    disabled={helperTransitioning}
-                    onClick={() => {
-                      setBuyerPriority("practicality");
-                      runHelperTransition("practicality", () => setHelperStep("question-2"));
-                    }}
-                    className={`${helperOptionButtonClass} ${
-                      helperPendingSelection === "practicality"
-                        ? "helper-option-selected scale-95 border-transparent bg-[#D1133A] text-white ring-2 ring-red-300"
-                        : helperTransitioning
-                          ? "opacity-55"
-                          : ""
-                    }`}
-                  >
-                    Practicality and value
-                  </button>
-                  <button
-                    type="button"
-                    disabled={helperTransitioning}
-                    onClick={() => {
-                      setBuyerPriority("style");
-                      runHelperTransition("style", () => setHelperStep("question-2"));
-                    }}
-                    className={`${helperOptionButtonClass} ${
-                      helperPendingSelection === "style"
-                        ? "helper-option-selected scale-95 border-transparent bg-[#D1133A] text-white ring-2 ring-red-300"
-                        : helperTransitioning
-                          ? "opacity-55"
-                          : ""
-                    }`}
-                  >
-                    Style and presence
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            {helperStep === "question-2" ? (
+            {helperStep === "question" && currentHelperQuestion ? (
               <div className={`text-[#17212b] ${helperTransitioning ? "helper-question-exit" : "helper-question-enter"}`}>
                 <HelperStepHeader
-                  label="Question 2 of 2"
-                  onBack={() => setHelperStep("question-1")}
+                  label={`Question ${helperQuestionIndex + 1} of ${helperQuestions.length}`}
+                  onBack={
+                    helperQuestionIndex === 0
+                      ? undefined
+                      : () => setHelperQuestionIndex((current) => Math.max(current - 1, 0))
+                  }
+                  onClose={helperQuestionIndex === 0 ? resetHelper : undefined}
                 />
                 <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[#dbe5dc]">
                   <div
@@ -1129,74 +1562,104 @@ export function FindTheOnePage() {
                   />
                 </div>
                 <h2 className="mt-3 text-2xl font-semibold leading-tight text-[#111827]">
-                  What would help you more day to day?
+                  {currentHelperQuestion.prompt}
                 </h2>
                 <div className="mt-6 grid gap-3">
-                  <button
-                    type="button"
-                    disabled={helperTransitioning}
-                    onClick={() => {
-                      setBuyerNeed("easy");
-                      runHelperTransition("easy", () => setHelperStep("result"));
-                    }}
-                    className={`${helperOptionButtonClass} ${
-                      helperPendingSelection === "easy"
-                        ? "helper-option-selected scale-95 border-transparent bg-[#D1133A] text-white ring-2 ring-red-300"
-                        : helperTransitioning
-                          ? "opacity-55"
-                          : ""
-                    }`}
-                  >
-                    Something easier to park and move around
-                  </button>
-                  <button
-                    type="button"
-                    disabled={helperTransitioning}
-                    onClick={() => {
-                      setBuyerNeed("room");
-                      runHelperTransition("room", () => setHelperStep("result"));
-                    }}
-                    className={`${helperOptionButtonClass} ${
-                      helperPendingSelection === "room"
-                        ? "helper-option-selected scale-95 border-transparent bg-[#D1133A] text-white ring-2 ring-red-300"
-                        : helperTransitioning
-                          ? "opacity-55"
-                          : ""
-                    }`}
-                  >
-                    More room for people or things
-                  </button>
+                  {currentHelperQuestion.options.map((option) => {
+                    const isSelected =
+                      helperPendingSelection === option.id ||
+                      helperAnswers[currentHelperQuestion.key] === option.id;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        disabled={helperTransitioning}
+                        onClick={() => {
+                          const nextAnswers = {
+                            ...helperAnswers,
+                            [currentHelperQuestion.key]: option.id,
+                          };
+                          setHelperAnswers(nextAnswers);
+                          runHelperTransition(option.id, () => {
+                            if (helperQuestionIndex === helperQuestions.length - 1) {
+                              setHelperStep("result");
+                              return;
+                            }
+
+                            setHelperQuestionIndex((current) => current + 1);
+                          });
+                        }}
+                        className={`${helperOptionButtonClass} ${
+                          isSelected
+                            ? "helper-option-selected scale-95 border-transparent bg-[#D1133A] text-white ring-2 ring-red-300"
+                            : helperTransitioning
+                              ? "opacity-55"
+                              : ""
+                        }`}
+                      >
+                        <span>{option.label}</span>
+                        {isSelected ? (
+                          <Check size={18} strokeWidth={2.6} className="shrink-0" />
+                        ) : null}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : null}
 
             {helperStep === "result" && helperResult ? (
               <div className="helper-question-enter text-[#17212b]">
-                <p className="text-[1.3rem] font-semibold uppercase tracking-[0.18em] text-[#2E3C4A] sm:text-[1.45rem]">
-                  Your car type
-                </p>
+                <HelperStepHeader label="Recommendation ready" onClose={resetHelper} />
                 <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[#dbe5dc]">
                   <div
                     className="h-full rounded-full bg-[#5e8a72] transition-[width] duration-300"
                     style={{ width: buyerGuideProgressWidth }}
                   />
                 </div>
-                <h2 className="mt-3 text-2xl font-semibold leading-tight text-[#111827]">
-                  {helperResult.type}
-                </h2>
-                <p className="mt-3 text-[1.7rem] font-normal leading-10 text-[#4B5563] sm:text-[1.85rem]">
-                  {helperResult.body}
-                </p>
-                <div className="mt-6 rounded-[24px] border border-[#d3dde6] bg-[#f2f6f9] p-5">
-                  <p className="text-sm text-[#5f7384]">Suggested starting type</p>
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <span className="inline-flex rounded-full border border-[#d3dde6] bg-[#f2f6f9] px-4 py-2 text-sm font-semibold text-[#4B5563]">
+                    Confidence {helperResult.confidencePercent}%
+                  </span>
+                  <span className="text-sm font-medium text-[#6b7280]">
+                    Winning score {helperResult.bestScore} / {HELPER_CONFIDENCE_MAX_SCORE}
+                  </span>
+                </div>
+                <div className="mt-5 rounded-[24px] border border-[#d3dde6] bg-[#f8fafc] p-5">
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#6b7280]">
+                    Your Best Match
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold leading-tight text-[#111827]">
+                    {helperResult.bestTypeLabel}
+                  </h2>
+                  <p className="mt-4 text-sm font-semibold uppercase tracking-[0.12em] text-[#6b7280]">
+                    Also Consider
+                  </p>
                   <p className="mt-2 text-lg font-semibold text-[#17212b]">
-                    {helperResult.suggestedTypeLabel}
+                    {helperResult.alsoConsiderLabel}
                   </p>
-                  <p className="mt-3 text-sm text-[#5f7384]">
-                    Also worth considering
+                </div>
+                <div className="mt-5 rounded-[24px] border border-[#d3dde6] bg-white p-5">
+                  <p className="text-sm font-semibold uppercase tracking-[0.12em] text-[#6b7280]">
+                    Why it fits
                   </p>
-                  <p className="mt-1 text-sm text-[#425466]">
-                    {helperResult.considering}
+                  <ul className="mt-4 space-y-3">
+                    {helperResult.bullets.map((bullet) => (
+                      <li key={bullet} className="flex gap-3 text-base leading-7 text-[#4B5563]">
+                        <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-[#D1133A]" />
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-6 rounded-[24px] border border-[#d3dde6] bg-[#f2f6f9] p-5">
+                  <p className="text-sm text-[#5f7384]">Apply to Define</p>
+                  <p className="mt-2 text-lg font-semibold text-[#17212b]">
+                    {helperResult.applyTypeLabel}
+                  </p>
+                  <p className="mt-3 text-sm text-[#425466]">
+                    We&apos;ll use this as your starting filter in Define so your matches reflect the recommendation.
                   </p>
                 </div>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -1209,10 +1672,13 @@ export function FindTheOnePage() {
                   </button>
                   <button
                     type="button"
-                    onClick={resetHelper}
+                    onClick={() => {
+                      setHelperQuestionIndex(0);
+                      setHelperStep("question");
+                    }}
                     className={helperSecondaryButtonClass}
                   >
-                    Close
+                    Adjust my answers
                   </button>
                 </div>
               </div>
@@ -1220,9 +1686,10 @@ export function FindTheOnePage() {
           </section>
 
           <section
+            data-card-root={budgetHelperStep === "intro" ? "true" : undefined}
             className={
               budgetHelperStep === "intro"
-                ? `helper-intro-card relative rounded-[24px] ${helperIntroCardClassName} cursor-pointer border p-[1px] text-slate-100`
+                ? `interactive-card-hover helper-intro-card relative rounded-[24px] ${helperIntroCardClassName} cursor-pointer border p-[1px] text-slate-100`
                 : `${helperCardBaseClassName} relative z-50`
             }
             onClick={() => {
@@ -1244,60 +1711,55 @@ export function FindTheOnePage() {
           >
             {budgetHelperStep === "intro" ? (
               <div className="helper-intro-card-inner flex min-h-[16.5rem] flex-col overflow-hidden rounded-[23px] lg:h-full">
-                <div className="helper-intro-strip relative h-[80px] min-h-[76px] max-h-[88px] overflow-hidden bg-[linear-gradient(180deg,#10202c_0%,#09131b_100%)]">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_28%,rgba(255,255,255,0.08),transparent_24%),radial-gradient(circle_at_82%_28%,rgba(255,255,255,0.06),transparent_22%),linear-gradient(180deg,rgba(255,255,255,0.03)_0%,rgba(0,0,0,0.12)_100%)]" />
-                  <div className="absolute inset-x-6 top-[52%] h-px -translate-y-1/2 bg-white/18" />
-                  <div className="absolute inset-x-6 top-[52%] h-px -translate-y-1/2 bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_0%,rgba(209,19,58,0.55)_56%,rgba(255,255,255,0.06)_100%)]" />
-                  <div className="absolute left-[58%] top-[52%] h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#ff8aa2]/50 bg-[#D1133A] shadow-[0_0_20px_rgba(209,19,58,0.24)]" />
-                  <div className="absolute left-[13%] top-[18%] rounded-full border border-white/12 bg-white/6 px-3 py-1 text-sm font-medium text-white/70 backdrop-blur-sm">
-                    $120k
-                  </div>
-                  <div className="absolute left-[38%] top-[10%] rounded-full border border-white/12 bg-white/7 px-3 py-1 text-sm font-medium text-white/74 backdrop-blur-sm">
-                    $180k
-                  </div>
-                  <div className="absolute right-[14%] top-[18%] rounded-full border border-white/14 bg-white/9 px-3 py-1 text-sm font-semibold text-white/86 shadow-[0_0_20px_rgba(209,19,58,0.18)] backdrop-blur-sm">
-                    $250k
-                  </div>
-                  <div className="absolute right-[10%] bottom-[16%] rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm font-medium text-white/64 backdrop-blur-sm">
-                    ?
-                  </div>
-                  <div className="absolute left-[18%] bottom-[18%] flex items-end gap-1.5 opacity-30">
-                    <span className="h-3 w-1.5 rounded-full bg-white/60" />
-                    <span className="h-5 w-1.5 rounded-full bg-white/70" />
-                    <span className="h-8 w-1.5 rounded-full bg-white/80" />
-                    <span className="h-6 w-1.5 rounded-full bg-white/65" />
-                  </div>
-                  <svg
-                    viewBox="0 0 180 70"
-                    className="absolute inset-x-8 bottom-3 h-8 w-[calc(100%-4rem)] opacity-18"
+                <div className="relative flex min-h-[16.5rem] flex-1 overflow-hidden bg-[#0a1018]">
+                  <Image
+                    src="/define-helper-budget.png"
+                    alt=""
+                    fill
+                    sizes="(min-width: 1024px) 28vw, 100vw"
+                    className="card-hover-image interactive-card-image object-cover object-center opacity-[0.98] brightness-[0.88] contrast-[1.04] saturate-[0.92]"
                     aria-hidden="true"
-                  >
-                    <path
-                      d="M4 54C24 52 33 38 49 38C67 38 73 48 92 48C114 48 121 22 141 22C154 22 163 29 176 32"
-                      fill="none"
-                      stroke="rgba(255,255,255,0.7)"
-                      strokeDasharray="2 6"
-                      strokeLinecap="round"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                </div>
-                <div className="flex flex-1 flex-col bg-[linear-gradient(180deg,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0.02)_100%)] px-5 py-4 sm:px-6 sm:py-5">
-                  <div className="inline-flex w-full items-center gap-3">
-                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#D1133A]/35 bg-[#D1133A] text-white shadow-[0_0_14px_rgba(209,19,58,0.18)]">
-                      <DollarSign size={16} strokeWidth={2.4} />
-                    </span>
-                    <p className="helper-intro-kicker flex-1 text-[0.9rem] font-semibold uppercase tracking-[0.15em] text-slate-200 sm:text-[0.98rem]">
-                      Need help with budget?
-                    </p>
-                  </div>
-                  <h2 className="helper-intro-body mt-3 max-w-[16.5rem] text-[1.18rem] font-semibold leading-[1.18] text-white sm:text-[1.34rem]">
-                    Start with a price range that feels right
-                  </h2>
-                  <div className="mt-auto flex justify-end pt-4">
-                    <span className="helper-intro-cta text-[0.78rem] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:text-[0.82rem]">
-                      Start budget helper
-                    </span>
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(5,9,14,0.42)_0%,rgba(7,11,17,0.39)_28%,rgba(8,12,18,0.23)_52%,rgba(8,12,18,0.09)_74%,rgba(8,12,18,0.04)_100%)]" />
+                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(8,11,17,0.05)_0%,rgba(8,12,18,0.025)_34%,rgba(8,11,17,0.19)_100%)]" />
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(209,19,58,0.05),transparent_28%),radial-gradient(circle_at_84%_22%,rgba(255,170,94,0.06),transparent_24%)]" />
+
+                  <div className="relative z-10 flex w-full flex-col justify-between p-5 sm:p-6">
+                    <div className="max-w-[15.25rem]">
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#D1133A]/35 bg-[#D1133A] text-white shadow-[0_0_18px_rgba(209,19,58,0.26)]">
+                        <DollarSign size={16} strokeWidth={2.4} />
+                      </span>
+                      <p className="helper-intro-kicker mt-4 text-[0.82rem] font-semibold uppercase tracking-[0.2em] text-white/78 sm:text-[0.88rem]">
+                        Need help with
+                      </p>
+                      <p className="mt-2 text-[2rem] font-semibold leading-[0.92] tracking-[0.02em] text-white sm:text-[2.2rem]">
+                        BUDGET?
+                      </p>
+                      <div className="mt-4 h-[2px] w-10 rounded-full bg-[#D1133A]" />
+                      <p className="mt-4 text-sm leading-6 text-white/82 sm:text-[0.95rem]">
+                        Start with a price range that feels right and we&apos;ll build from there.
+                      </p>
+                    </div>
+
+                    <div className="flex items-end justify-between gap-4 pt-6">
+                      <span className="helper-intro-cta inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#D1133A] shadow-[0_12px_24px_rgba(0,0,0,0.22)] sm:text-[0.98rem]">
+                        Start Budget Helper
+                        <span aria-hidden="true" className="text-base leading-none">
+                          →
+                        </span>
+                      </span>
+
+                      <div className="min-w-[8.5rem] rounded-[18px] border border-white/12 bg-black/22 px-3 py-2 backdrop-blur-sm">
+                        <div className="relative h-1.5 rounded-full bg-white/18">
+                          <div className="absolute inset-y-0 left-[20%] right-[14%] rounded-full bg-[linear-gradient(90deg,rgba(255,255,255,0.12)_0%,rgba(209,19,58,0.88)_52%,rgba(255,227,195,0.56)_100%)]" />
+                          <div className="absolute left-[68%] top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#ffb4c0]/70 bg-[#D1133A] shadow-[0_0_18px_rgba(209,19,58,0.38)]" />
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-[0.68rem] font-semibold text-white/78">
+                          <span>$120k</span>
+                          <span>$250k</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

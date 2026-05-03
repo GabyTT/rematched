@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   Settings,
+  Shield,
   User,
   X,
 } from "lucide-react";
@@ -30,6 +31,7 @@ const appNavItems = [
 const accountNavItems = [
   { href: "/profile", label: "Profile", section: "profile", icon: User },
   { href: "/profile", label: "Settings", section: "settings", icon: Settings },
+  { href: "/admin", label: "Admin", section: "admin", icon: Shield },
 ];
 
 const stepByPathname: Record<string, RoadmapStep> = {
@@ -59,6 +61,8 @@ export function AppChrome() {
         ? "moving-on"
         : pathname === "/profile"
           ? "profile"
+          : pathname.startsWith("/admin")
+            ? "admin"
           : "home";
 
   useEffect(() => {
@@ -104,7 +108,7 @@ export function AppChrome() {
 
   return (
     <>
-      <header className="border-b border-input bg-panel/95 backdrop-blur">
+      <header className="border-b border-input bg-panel/95">
         <div className="mx-auto grid w-full max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-3 sm:px-8 lg:px-12">
           <button
             type="button"
@@ -123,25 +127,17 @@ export function AppChrome() {
         </div>
       </header>
 
-      <div
-        className={`fixed inset-0 z-50 transition ${
-          isDrawerOpen ? "pointer-events-auto" : "pointer-events-none"
-        }`}
-        aria-hidden={!isDrawerOpen}
-      >
-        <button
-          type="button"
-          className={`absolute inset-0 bg-black/60 transition-opacity duration-300 ${
-            isDrawerOpen ? "opacity-100" : "opacity-0"
-          }`}
-          onClick={() => setIsDrawerOpen(false)}
-          aria-label="Close menu overlay"
-        />
-        <aside
-          className={`absolute left-0 top-0 flex h-full w-[min(20rem,82vw)] flex-col gap-5 border-r border-input bg-panel p-5 shadow-[18px_0_40px_rgba(0,0,0,0.35)] transition-transform duration-300 ${
-            isDrawerOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-        >
+      {isDrawerOpen ? (
+        <div className="fixed inset-0 z-50 transition" aria-hidden={false}>
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/60 transition-opacity duration-300 opacity-100"
+            onClick={() => setIsDrawerOpen(false)}
+            aria-label="Close menu overlay"
+          />
+          <aside
+            className="absolute left-0 top-0 flex h-full w-[min(20rem,82vw)] translate-x-0 flex-col gap-5 border-r border-input bg-panel p-5 shadow-[18px_0_40px_rgba(0,0,0,0.35)] transition-transform duration-300"
+          >
           <div className="flex items-center justify-between">
             <span className="text-lg font-semibold tracking-[0.2em] text-white">
               REVMATCHED
@@ -261,8 +257,9 @@ export function AppChrome() {
               </button>
             </div>
           </nav>
-        </aside>
-      </div>
+          </aside>
+        </div>
+      ) : null}
 
       <UnlockAlertsModal
         isOpen={isUnlockAlertsModalOpen}

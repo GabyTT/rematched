@@ -101,8 +101,8 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(209,19,58,0.16),transparent_24%),linear-gradient(180deg,#011118_0%,#000000_44%,#04121a_100%)] text-foreground">
-      <section>
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-5 py-2 sm:px-8 lg:min-h-[53vh] lg:gap-1 lg:px-10 lg:py-2">
+      <section className="pointer-events-none">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-5 py-2 sm:px-8 lg:min-h-[49vh] lg:gap-1 lg:px-10 lg:py-1">
           <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-0">
             <div className="relative z-20 max-w-3xl lg:mr-[-11rem] lg:w-[52%] lg:max-w-none">
               <h1
@@ -120,7 +120,7 @@ export default function Home() {
                 <Link
                   href="/find-the-one"
                   onClick={stopHeroNudges}
-                  className={`home-hero-cta motion-rise-fade motion-delay-3 card-cta app-button inline-flex min-h-[4.5rem] w-full items-center justify-center rounded-[2.25rem] border border-[#D1133A] bg-[#D1133A] px-12 py-5 text-xl font-semibold text-[#FFFFFF] shadow-[0_18px_40px_rgba(209,19,58,0.32),0_0_30px_rgba(209,19,58,0.16)] hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_22px_48px_rgba(209,19,58,0.4),0_0_40px_rgba(209,19,58,0.22)] active:translate-y-0 active:scale-[0.98] sm:min-h-[4.75rem] sm:w-fit sm:px-14 sm:text-[1.35rem] ${
+                  className={`pointer-events-auto home-hero-cta motion-rise-fade motion-delay-3 card-cta app-button inline-flex min-h-[4.5rem] w-full items-center justify-center rounded-[2.25rem] border border-[#D1133A] bg-[#D1133A] px-12 py-5 text-xl font-semibold text-[#FFFFFF] shadow-[0_18px_40px_rgba(209,19,58,0.32),0_0_30px_rgba(209,19,58,0.16)] hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_22px_48px_rgba(209,19,58,0.4),0_0_40px_rgba(209,19,58,0.22)] active:translate-y-0 active:scale-[0.98] sm:min-h-[4.75rem] sm:w-fit sm:px-14 sm:text-[1.35rem] ${
                     isHeroCtaNudging ? "home-hero-cta-nudge" : ""
                   }`}
                 >
@@ -134,7 +134,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="relative z-10 flex w-full flex-col lg:ml-[-5%] lg:w-[68%] lg:max-w-none lg:items-end">
+            <div className="pointer-events-none relative z-10 flex w-full flex-col lg:ml-[-5%] lg:w-[68%] lg:max-w-none lg:items-end" aria-hidden="true">
               <div className="home-hero-visual relative h-[22rem] w-full overflow-hidden sm:h-[27rem] lg:h-[29rem]">
                 <div className="pointer-events-none absolute inset-y-0 left-0 z-10 hidden w-[46%] bg-gradient-to-r from-[#01080d] via-[#01080d]/88 via-28% to-transparent lg:block" />
                 <Image
@@ -151,12 +151,13 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="text-[#17212b]">
-        <div className="mx-auto -mt-2 grid w-full max-w-7xl gap-4 px-5 py-1 sm:-mt-3 sm:px-8 sm:py-2 lg:-mt-5 lg:grid-cols-3 lg:items-stretch lg:px-12 lg:py-1">
+      <section className="pt-1 text-[#17212b] sm:pt-2 lg:pt-0">
+        <div className="mx-auto grid w-full max-w-7xl gap-4 px-5 py-1 sm:px-8 sm:py-2 lg:grid-cols-3 lg:items-stretch lg:px-12 lg:py-1">
           <Link
             href="/find-the-one"
+            data-card-root="true"
             onClick={(event) => handleCardNavigate(event, "/find-the-one")}
-            className={`home-stage-card page-panel group rounded-[28px] border border-[#d3dde6] bg-[#fbfaf8] p-4 shadow-[0_18px_40px_rgba(18,31,43,0.09)] sm:p-5 lg:h-full ${animatingCard === "/find-the-one" ? "home-stage-card-clicking" : ""}`}
+            className={`interactive-card-hover home-stage-card page-panel group rounded-[28px] border border-[#d3dde6] bg-[#fbfaf8] p-4 shadow-[0_18px_40px_rgba(18,31,43,0.09)] sm:p-5 lg:h-full ${animatingCard === "/find-the-one" ? "home-stage-card-clicking" : ""}`}
           >
             <div className="flex h-full flex-col">
               <div className="max-w-sm flex-1">
@@ -183,8 +184,9 @@ export default function Home() {
 
           <Link
             href="/life-together"
+            data-card-root="true"
             onClick={(event) => handleCardNavigate(event, "/life-together")}
-            className={`home-stage-card page-panel group rounded-[28px] border border-[#d3dde6] bg-[#fbfaf8] p-4 shadow-[0_18px_40px_rgba(18,31,43,0.09)] sm:p-5 lg:h-full ${animatingCard === "/life-together" ? "home-stage-card-clicking" : ""}`}
+            className={`interactive-card-hover home-stage-card page-panel group rounded-[28px] border border-[#d3dde6] bg-[#fbfaf8] p-4 shadow-[0_18px_40px_rgba(18,31,43,0.09)] sm:p-5 lg:h-full ${animatingCard === "/life-together" ? "home-stage-card-clicking" : ""}`}
           >
             <div className="flex h-full flex-col">
               <div className="flex-1">
@@ -211,8 +213,9 @@ export default function Home() {
 
           <Link
             href="/moving-on"
+            data-card-root="true"
             onClick={(event) => handleCardNavigate(event, "/moving-on")}
-            className={`home-stage-card page-panel group rounded-[28px] border border-[#d3dde6] bg-[#fbfaf8] p-4 shadow-[0_18px_40px_rgba(18,31,43,0.09)] sm:p-5 lg:h-full ${animatingCard === "/moving-on" ? "home-stage-card-clicking" : ""}`}
+            className={`interactive-card-hover home-stage-card page-panel group rounded-[28px] border border-[#d3dde6] bg-[#fbfaf8] p-4 shadow-[0_18px_40px_rgba(18,31,43,0.09)] sm:p-5 lg:h-full ${animatingCard === "/moving-on" ? "home-stage-card-clicking" : ""}`}
           >
             <div className="flex h-full flex-col">
               <div className="flex-1">

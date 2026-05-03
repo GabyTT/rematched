@@ -59,9 +59,9 @@ export default function MatchPage() {
                     onClick={() => setIsTopPicksHelpOpen((current) => !current)}
                     aria-expanded={isTopPicksHelpOpen}
                     aria-label="How Compare Top Picks works"
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.28)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel active:scale-95"
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.28)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel active:scale-95"
                   >
-                    <span aria-hidden="true" className="font-serif text-[1.7rem] font-bold italic leading-none">
+                    <span aria-hidden="true" className="font-serif text-[1.3rem] font-bold italic leading-none">
                       i
                     </span>
                   </button>
