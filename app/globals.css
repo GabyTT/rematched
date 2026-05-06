@@ -24,6 +24,11 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 .nav-pill,
 .card-cta,
 .app-button,
@@ -695,6 +700,7 @@ body {
   .define-field-attention,
   .matches-completion-card,
   .matches-completion-progress,
+  .matches-completion-progress-finish::after,
   .matches-review-liked-shake,
   .explore-tab-shortcut-pulse,
   .liked-review-top-picks-pulse {
@@ -758,6 +764,26 @@ body {
   width: 100%;
   transform-origin: left center;
   animation: matchesCompletionProgress 520ms ease-out;
+}
+
+.matches-completion-progress-finish {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.28);
+}
+
+.matches-completion-progress-finish::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 48%,
+    transparent 100%
+  );
+  transform: translateX(-115%);
+  animation: matchesCompletionProgressSheen 900ms ease-out 160ms both;
 }
 
 .matches-review-liked-shake {
@@ -979,6 +1005,22 @@ body {
   100% {
     transform: scaleX(1);
     filter: brightness(1);
+  }
+}
+
+@keyframes matchesCompletionProgressSheen {
+  0% {
+    opacity: 0;
+    transform: translateX(-115%);
+  }
+
+  20% {
+    opacity: 0.55;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(115%);
   }
 }
 

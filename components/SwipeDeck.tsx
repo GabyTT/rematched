@@ -17,6 +17,7 @@ import { CarDetailsModal } from "@/components/CarDetailsModal";
 import { useJourney } from "@/components/JourneyProvider";
 import { useMounted } from "@/hooks/useMounted";
 import type { Car } from "@/lib/cars";
+import { trackGuestDetailsOpened } from "@/lib/guestEngagement";
 
 export type { CarJourneyState } from "@/components/JourneyProvider";
 
@@ -43,7 +44,7 @@ export function SwipeDeck({
   preferenceChips = [],
 }: SwipeDeckProps) {
   const mounted = useMounted();
-  const { carProgress, setCarState } = useJourney();
+  const { carProgress, isAuthenticated, setCarState } = useJourney();
   const likedCount = Object.values(carProgress).filter(
     (value) => value.state === "liked",
   ).length;
@@ -52,8 +53,14 @@ export function SwipeDeck({
   const [buttonSwipeDirection, setButtonSwipeDirection] = useState<
     "left" | "right" | null
   >(null);
-  const [discoverDeck] = useState(cars);
-  const [initialDiscoverDeckSize] = useState(cars.length);
+  const incomingDeckSignature = useMemo(
+    () => cars.map((car) => car.id).join("|"),
+    [cars],
+  );
+  const [discoverDeck, setDiscoverDeck] = useState(cars);
+  const [initialDiscoverDeckSize, setInitialDiscoverDeckSize] = useState(
+    cars.length,
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isNudgeActive, setIsNudgeActive] = useState(false);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
@@ -67,6 +74,7 @@ export function SwipeDeck({
   const passToastTimeoutRef = useRef<number | null>(null);
   const reviewLikedShakeTimeoutRef = useRef<number | null>(null);
   const hasTriggeredCompletionShakeRef = useRef(false);
+  const activeDeckSignatureRef = useRef(incomingDeckSignature);
   const nudgeCountRef = useRef(0);
   const childRefs = useMemo(
     () => discoverDeck.map(() => createRef<TinderCardHandle>()),
@@ -86,6 +94,22 @@ export function SwipeDeck({
   const inlineReviewLikedButtonClassName = hasLikedCars
     ? "app-button inline-flex w-fit items-center rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
     : "inline-flex w-fit cursor-default items-center rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-slate-500 transition hover:bg-white/7";
+
+  useEffect(() => {
+    if (activeDeckSignatureRef.current === incomingDeckSignature) {
+      return;
+    }
+
+    if (currentIndex !== 0) {
+      return;
+    }
+
+    activeDeckSignatureRef.current = incomingDeckSignature;
+    hasTriggeredCompletionShakeRef.current = false;
+    setDiscoverDeck(cars);
+    setInitialDiscoverDeckSize(cars.length);
+    setCurrentIndex(0);
+  }, [cars, currentIndex, incomingDeckSignature]);
 
   const clearNudgeTimers = useCallback(() => {
     if (nudgeTimerRef.current !== null) {
@@ -446,7 +470,13 @@ export function SwipeDeck({
                           <div className="flex flex-col gap-3">
                             <button
                               type="button"
-                              onClick={() => setActiveDetailsCar(car)}
+                              onClick={() => {
+                                if (!isAuthenticated) {
+                                  trackGuestDetailsOpened();
+                                }
+
+                                setActiveDetailsCar(car);
+                              }}
                               className="pointer-events-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#D9E0E7] bg-white px-4 py-2.5 text-sm font-semibold text-[#16212B] transition duration-200 hover:border-accent hover:bg-accent hover:text-white"
                             >
                               <Eye

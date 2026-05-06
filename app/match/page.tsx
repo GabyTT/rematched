@@ -10,11 +10,12 @@ import { NotesModal } from "@/components/NotesModal";
 import { SponsorCard } from "@/components/SponsorSupportLine";
 import { useJourney } from "@/components/JourneyProvider";
 import { useMounted } from "@/hooks/useMounted";
-import { cars } from "@/lib/cars";
+import { isPrimaryDiscoveryEligible } from "@/lib/matching";
 
 export default function MatchPage() {
   const mounted = useMounted();
-  const { carProgress, setCarState, updateCarNotes } = useJourney();
+  const { activeInventoryCars, carProgress, setCarState, updateCarNotes } =
+    useJourney();
   const [activeNotesCarId, setActiveNotesCarId] = useState<string | null>(null);
   const [activeDetailsCarId, setActiveDetailsCarId] = useState<string | null>(
     null,
@@ -25,18 +26,22 @@ export default function MatchPage() {
     return null;
   }
 
-  const matchedCars = cars
-    .filter((car) => carProgress[car.id]?.state === "matched")
+  const matchedCars = activeInventoryCars
+    .filter(
+      (car) =>
+        carProgress[car.id]?.state === "matched" &&
+        isPrimaryDiscoveryEligible(car),
+    )
     .slice(0, 3)
     .map((car) => ({
       ...car,
       notes: carProgress[car.id]?.notes ?? "",
     }));
   const activeNotesCar = activeNotesCarId
-    ? cars.find((car) => car.id === activeNotesCarId) ?? null
+    ? activeInventoryCars.find((car) => car.id === activeNotesCarId) ?? null
     : null;
   const activeDetailsCar = activeDetailsCarId
-    ? cars.find((car) => car.id === activeDetailsCarId) ?? null
+    ? activeInventoryCars.find((car) => car.id === activeDetailsCarId) ?? null
     : null;
 
   return (

@@ -1,0 +1,2 @@
+-- Seed data is intentionally empty for Phase 1.
+-- Add local development profiles and preference examples in a later seed-data step.

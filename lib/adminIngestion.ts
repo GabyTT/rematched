@@ -976,6 +976,34 @@ function evaluateRecommendationEligibility(input: {
   };
 }
 
+export function getRecommendationProfileForListingId(listingId: string) {
+  const normalizedListing = mockNormalizedListings.find(
+    (listing) => listing.id === listingId,
+  );
+
+  if (!normalizedListing) {
+    return null;
+  }
+
+  const rawListing =
+    mockRawListings.find((listing) => listing.id === normalizedListing.rawListingId) ??
+    null;
+  const reviewRecord =
+    mockListingReviewStatuses.find((record) => record.listingId === listingId) ?? null;
+  const duplicateWarnings = mockDuplicateWarnings.filter(
+    (warning) =>
+      warning.listingId === listingId ||
+      warning.possibleDuplicateListingIds.includes(listingId),
+  );
+
+  return evaluateRecommendationEligibility({
+    duplicateWarnings,
+    normalizedListing,
+    rawListing,
+    reviewRecord,
+  });
+}
+
 export const adminListings: AdminListing[] = mockNormalizedListings.map(
   (listing) => {
     const reviewRecord = reviewStatusByListingId[listing.id];

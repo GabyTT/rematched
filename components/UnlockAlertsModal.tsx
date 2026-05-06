@@ -40,12 +40,16 @@ export function UnlockAlertsModal({
             Guest browsing
           </span>
           <h2 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            Unlock match alerts
+            Nice — you’re all set for today.
           </h2>
-          <p className="mt-4 text-base leading-7 text-slate-300">
-            Want us to keep watch? Save your preferences and get alerted when a
-            match shows up — on the house.
-          </p>
+          <div className="mt-4 text-base leading-7 text-slate-300">
+            <p>Create a free account and we’ll:</p>
+            <ul className="mt-3 list-disc space-y-1 pl-5">
+              <li>Save your picks</li>
+              <li>Remember your preferences</li>
+              <li>Alert you when a new match shows up</li>
+            </ul>
+          </div>
         </div>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -54,7 +58,7 @@ export function UnlockAlertsModal({
             onClick={onClose}
             className="app-button inline-flex min-h-12 items-center justify-center rounded-full border border-accent bg-accent px-5 py-3 text-sm font-semibold text-white hover:brightness-110"
           >
-            Unlock alerts
+            Create account
           </Link>
           <Link
             href="/sign-in"

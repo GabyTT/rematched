@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DollarSign, Grid2x2, RotateCcw, Search } from "lucide-react";
+import { DollarSign, Grid2x2, RotateCcw, Search, ThumbsUp } from "lucide-react";
 
 import { CarBrowseActions } from "@/components/CarBrowseActions";
 import { CarCard } from "@/components/CarCard";
@@ -15,17 +15,26 @@ import { SponsorCard } from "@/components/SponsorCard";
 import { TopPickLimitSheet } from "@/components/TopPickLimitSheet";
 import { useJourney } from "@/components/JourneyProvider";
 import { useMounted } from "@/hooks/useMounted";
-import { cars, type Car } from "@/lib/cars";
+import { cars as mockCars, type Car } from "@/lib/cars";
+import { loadInventoryWithFallback, type InventoryLoadResult } from "@/lib/inventoryProvider";
 import {
-  carIsAvailable,
   carMatchesBudgetRange,
   carMatchesNearBudgetRange,
   carMatchesPreferences,
   getDiscoverableCars,
   hasValidBudgetRange,
   hasUsablePreferences,
+  isBuyerVisibleListing,
+  isBroadExplorationEligible,
+  isPrimaryDiscoveryEligible,
 } from "@/lib/matching";
 import { sponsorAds } from "@/lib/sponsorAds";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { isSameDay } from "@/lib/date";
+import {
+  trackGuestDetailsOpened,
+  trackGuestSessionCompleted,
+} from "@/lib/guestEngagement";
 
 const budgetFormatter = new Intl.NumberFormat("en-US");
 const normalizeValue = (value: string) => value.trim().toLowerCase();
@@ -216,6 +225,11 @@ const exploreViewDescriptions: Record<ExploreView, string> = {
 export default function DiscoverPage() {
   const mounted = useMounted();
   const router = useRouter();
+  const [inventoryResult, setInventoryResult] = useState<InventoryLoadResult>({
+    source: "mock",
+    cars: mockCars,
+  });
+  const [isInventoryLoading, setIsInventoryLoading] = useState(true);
   const [deckKey, setDeckKey] = useState(0);
   const [activeDetailsCar, setActiveDetailsCar] = useState<Car | null>(null);
   const [replacementCandidateCarId, setReplacementCandidateCarId] = useState<
@@ -228,9 +242,46 @@ export default function DiscoverPage() {
   const exploreSectionRef = useRef<HTMLElement | null>(null);
   const exploreTabsRef = useRef<HTMLDivElement | null>(null);
   const keepExploringPulseTimeoutRef = useRef<number | null>(null);
-  const { carProgress, preferences, setCarState, replaceEarliestTopPick } =
-    useJourney();
-  const discoverCars = getDiscoverableCars(cars, preferences, carProgress);
+  const lastInventoryLoadAuthKeyRef = useRef<string | null>(null);
+  const {
+    carProgress,
+    preferences,
+    setCarState,
+    replaceEarliestTopPick,
+    updateActiveInventoryCars,
+    isAuthenticated,
+    openUnlockAlertsModal,
+  } = useJourney();
+  const inventoryCars = inventoryResult.cars;
+  const mockCarIds = useMemo(
+    () => new Set(mockCars.map((car) => car.id)),
+    [],
+  );
+  const inventoryCarProgress = useMemo(
+    () =>
+      inventoryCars.reduce<typeof carProgress>(
+        (result, car) => {
+          result[car.id] ??= {
+            state: null,
+            notes: "",
+            matchedAt: null,
+          };
+
+          return result;
+        },
+        { ...carProgress },
+      ),
+    [carProgress, inventoryCars],
+  );
+  const discoverCars = useMemo(
+    () =>
+      getDiscoverableCars(
+        inventoryCars,
+        preferences,
+        inventoryCarProgress,
+      ),
+    [inventoryCarProgress, inventoryCars, preferences],
+  );
   const [matchDeckCars, setMatchDeckCars] = useState(() => discoverCars);
   const hasDefinePreferences = hasUsablePreferences(preferences);
   const hasBudgetRange = hasValidBudgetRange(preferences);
@@ -254,64 +305,72 @@ export default function DiscoverPage() {
           return right.year - left.year;
         }
 
-        return cars.findIndex((car) => car.id === left.id) -
-          cars.findIndex((car) => car.id === right.id);
+        return inventoryCars.findIndex((car) => car.id === left.id) -
+          inventoryCars.findIndex((car) => car.id === right.id);
       }),
-    [],
+    [inventoryCars],
   );
 
   const keepExploringCars = useMemo(
-    () => sortByMostRecent(cars.filter((car) => carIsAvailable(car))),
-    [sortByMostRecent],
+    () =>
+      sortByMostRecent(
+        inventoryCars.filter((car) => isBroadExplorationEligible(car)),
+      ),
+    [inventoryCars, sortByMostRecent],
   );
 
   const budgetCars = useMemo(
     () =>
       hasBudgetRange
         ? sortByMostRecent(
-            cars.filter(
+            inventoryCars.filter(
               (car) =>
-                carIsAvailable(car) &&
+                isBroadExplorationEligible(car) &&
                 (carMatchesBudgetRange(car, preferences) ||
                   carMatchesNearBudgetRange(car, preferences)),
             ),
           )
         : [],
-    [hasBudgetRange, preferences, sortByMostRecent],
+    [hasBudgetRange, inventoryCars, preferences, sortByMostRecent],
   );
   const secondChanceCars = useMemo(
     () =>
       sortByMostRecent(
-        cars.filter(
-          (car) => carIsAvailable(car) && carProgress[car.id]?.state === "rejected",
+        inventoryCars.filter(
+          (car) =>
+            isBroadExplorationEligible(car) &&
+            inventoryCarProgress[car.id]?.state === "rejected",
         ),
       ),
-    [carProgress, sortByMostRecent],
+    [inventoryCarProgress, inventoryCars, sortByMostRecent],
   );
   const allCars = useMemo(
-    () => sortByMostRecent(cars.filter((car) => carIsAvailable(car))),
-    [sortByMostRecent],
+    () =>
+      sortByMostRecent(inventoryCars.filter((car) => isBuyerVisibleListing(car))),
+    [inventoryCars, sortByMostRecent],
   );
   const allPreferenceMatches = useMemo(
     () =>
       sortByMostRecent(
-        cars.filter(
-          (car) => carIsAvailable(car) && carMatchesPreferences(car, preferences),
+        inventoryCars.filter(
+          (car) =>
+            isPrimaryDiscoveryEligible(car) &&
+            carMatchesPreferences(car, preferences),
         ),
       ),
-    [preferences, sortByMostRecent],
+    [inventoryCars, preferences, sortByMostRecent],
   );
   const exploreExclusionIds = useMemo(() => {
     const excludedIds = new Set(discoverCars.map((car) => car.id));
 
-    Object.entries(carProgress).forEach(([carId, value]) => {
+    Object.entries(inventoryCarProgress).forEach(([carId, value]) => {
       if (["liked", "rejected", "matched"].includes(value.state ?? "")) {
         excludedIds.add(carId);
       }
     });
 
     return excludedIds;
-  }, [carProgress, discoverCars]);
+  }, [inventoryCarProgress, discoverCars]);
 
   const currentExploreView =
     activeExploreView === "budget" && !hasBudgetRange
@@ -359,13 +418,46 @@ export default function DiscoverPage() {
   ).length;
   const hasLikedCars = likedCount > 0;
   const reviewLikedButtonClassName = hasLikedCars
-    ? "app-button inline-flex justify-center rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
-    : "inline-flex cursor-default justify-center rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-white/7";
-  const reviewedAllAvailableMatches =
+    ? "app-button inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+    : "inline-flex cursor-default items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-white/7";
+  const matchingCars = allPreferenceMatches;
+  const today = useMemo(() => new Date(), []);
+  const hasActionToday = useCallback(
+    (carId: string) => {
+      const progress = inventoryCarProgress[carId];
+      const actionTimestamps = [
+        progress?.likedAt,
+        progress?.passedAt,
+        progress?.topPickedAt,
+      ];
+
+      return actionTimestamps.some((timestamp) => {
+        if (!timestamp) {
+          return false;
+        }
+
+        const actionDate = new Date(timestamp);
+
+        return !Number.isNaN(actionDate.getTime()) && isSameDay(actionDate, today);
+      });
+    },
+    [inventoryCarProgress, today],
+  );
+  const totalMatchingCars = matchingCars.length;
+  const completedMatchingCars = matchingCars.filter((car) =>
+    hasActionToday(car.id),
+  ).length;
+  const matchingCarsProgress =
+    totalMatchingCars > 0 ? completedMatchingCars / totalMatchingCars : 0;
+  const matchingCarsProgressPercent = `${Math.round(
+    Math.min(matchingCarsProgress, 1) * 100,
+  )}%`;
+  const finishedTodaysLineup =
     hasDefinePreferences &&
     !discoverCars.length &&
-    allPreferenceMatches.length > 0 &&
-    allPreferenceMatches.every((car) => carProgress[car.id]?.state !== null);
+    totalMatchingCars > 0 &&
+    completedMatchingCars === totalMatchingCars;
+  const hasNoMatches = hasDefinePreferences && totalMatchingCars === 0;
   const handleDefinePromptClick = () => {
     window.sessionStorage.setItem("revmatched.define-attention", "true");
     router.push("/find-the-one");
@@ -390,6 +482,156 @@ export default function DiscoverPage() {
       keepExploringPulseTimeoutRef.current = null;
     }, 1200);
   }, [setActiveExploreView]);
+
+  useEffect(() => {
+    let isCancelled = false;
+    const supabase = createSupabaseBrowserClient();
+
+    const loadInventoryForAuthKey = async (
+      authKey: string,
+      options: { force?: boolean } = {},
+    ) => {
+      if (!options.force && lastInventoryLoadAuthKeyRef.current === authKey) {
+        return;
+      }
+
+      lastInventoryLoadAuthKeyRef.current = authKey;
+      setIsInventoryLoading(true);
+
+      try {
+        const nextInventoryResult = await loadInventoryWithFallback(supabase);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setInventoryResult(nextInventoryResult);
+      } catch (error) {
+        if (isCancelled) {
+          return;
+        }
+
+        setInventoryResult({
+          source: "mock",
+          cars: mockCars,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Unable to load Supabase inventory.",
+        });
+      } finally {
+        if (!isCancelled) {
+          setIsInventoryLoading(false);
+        }
+      }
+    };
+
+    const loadInventoryForCurrentSession = async (options: { force?: boolean } = {}) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      await loadInventoryForAuthKey(session?.user.id ?? "anonymous", options);
+    };
+
+    void loadInventoryForCurrentSession({ force: true });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (
+        event !== "INITIAL_SESSION" &&
+        event !== "SIGNED_IN" &&
+        event !== "TOKEN_REFRESHED" &&
+        event !== "SIGNED_OUT"
+      ) {
+        return;
+      }
+
+      const authKey = session?.user.id ?? "anonymous";
+
+      window.setTimeout(() => {
+        void loadInventoryForAuthKey(authKey);
+      }, 0);
+    });
+
+    return () => {
+      isCancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    setMatchDeckCars(discoverCars);
+  }, [discoverCars]);
+
+  useEffect(() => {
+    updateActiveInventoryCars(inventoryCars);
+  }, [inventoryCars, updateActiveInventoryCars]);
+
+  useEffect(() => {
+    if (!finishedTodaysLineup || isAuthenticated) {
+      return;
+    }
+
+    trackGuestSessionCompleted(today);
+  }, [finishedTodaysLineup, isAuthenticated, today]);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("revmatched:discover-count", {
+        detail: {
+          count: discoverCars.length,
+          source: inventoryResult.source,
+        },
+      }),
+    );
+  }, [discoverCars.length, inventoryResult.source]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") {
+      return;
+    }
+
+    const mockInventoryCars = inventoryCars.filter((car) =>
+      mockCarIds.has(car.id),
+    );
+    const supabaseLikeInventoryCars = inventoryCars.filter(
+      (car) => !mockCarIds.has(car.id),
+    );
+
+    console.info("[RevMatched Discover inventory]", {
+      activeExploreView: currentExploreView,
+      discoverCarsUsedAfterPreferenceFiltering: discoverCars.length,
+      exploreCarsUsedAfterExploreFiltering: exploreCars.length,
+      inventoryError: inventoryResult.error ?? null,
+      inventoryLoading: isInventoryLoading,
+      inventorySource: inventoryResult.source,
+      journeyProviderOverwritingInventory: false,
+      journeyProgressTrackedCars: Object.keys(carProgress).length,
+      matchDeckCarsUsedBySwipeDeck: matchDeckCars.length,
+      mockCarsInActiveInventory: mockInventoryCars.length,
+      mockInventorySample: mockInventoryCars
+        .slice(0, 5)
+        .map((car) => car.name),
+      supabaseLikeCarsInActiveInventory: supabaseLikeInventoryCars.length,
+      supabaseLikeInventorySample: supabaseLikeInventoryCars
+        .slice(0, 5)
+        .map((car) => car.name),
+      totalCarsReturnedByLoadInventoryWithFallback: inventoryCars.length,
+    });
+  }, [
+    carProgress,
+    currentExploreView,
+    discoverCars,
+    exploreCars,
+    inventoryCars,
+    inventoryResult.error,
+    inventoryResult.source,
+    isInventoryLoading,
+    matchDeckCars,
+    mockCarIds,
+  ]);
 
   useEffect(() => {
     const handleRefreshDiscover = () => {
@@ -436,6 +678,13 @@ export default function DiscoverPage() {
 
     setReplacementCandidateCarId(carId);
   };
+  const handleViewDetails = (car: Car) => {
+    if (!isAuthenticated) {
+      trackGuestDetailsOpened();
+    }
+
+    setActiveDetailsCar(car);
+  };
 
   if (!mounted) {
     return null;
@@ -445,6 +694,11 @@ export default function DiscoverPage() {
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-5 py-4 sm:px-8 lg:px-12 lg:py-5">
         <section className="page-panel motion-rise-fade motion-delay-0 space-y-2.5 rounded-[28px] border border-input bg-panel p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-5">
+          {isInventoryLoading ? (
+            <p className="text-xs font-medium text-slate-500">
+              Loading inventory...
+            </p>
+          ) : null}
           {matchDeckCars.length ? (
             <SwipeDeck
               key={deckKey}
@@ -478,22 +732,47 @@ export default function DiscoverPage() {
                 }}
                 className={reviewLikedButtonClassName}
               >
+                <ThumbsUp size={18} strokeWidth={0} className="fill-current" />
                 Review Liked
               </Link>
             </div>
-          ) : reviewedAllAvailableMatches ? (
+          ) : finishedTodaysLineup ? (
             <div className="matches-completion-card rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.045)_0%,rgba(255,255,255,0.018)_100%)] p-6 shadow-[0_18px_42px_rgba(0,0,0,0.26)]">
+              <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-white/8">
+                <div
+                  className="matches-completion-progress matches-completion-progress-finish h-full rounded-full bg-emerald-400"
+                  style={{ width: matchingCarsProgressPercent }}
+                />
+              </div>
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full border border-emerald-400/20 bg-emerald-400/10 text-emerald-200">
-                    ✓
-                  </div>
                   <h2 className="text-2xl font-semibold text-white">
-                    You’ve met today’s lineup — we’ll bring you more tomorrow.
+                    {isAuthenticated
+                      ? "You’ve met today’s lineup — we’ll bring you more tomorrow."
+                      : "You’ve met today’s lineup."}
                   </h2>
                   <p className="mt-2 text-base leading-relaxed text-slate-300">
                     Want to take another look or explore more?
                   </p>
+                  {!isAuthenticated ? (
+                    <div className="mt-5 space-y-3">
+                      <div>
+                        <p className="text-sm font-semibold text-white">
+                          Want us to bring you more tomorrow?
+                        </p>
+                        <p className="mt-1 text-sm leading-relaxed text-slate-400">
+                          Save your picks and we’ll keep watching for matches like these.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={openUnlockAlertsModal}
+                        className="app-button inline-flex w-fit justify-center rounded-full border border-accent bg-white px-5 py-2.5 text-sm font-semibold text-accent transition hover:bg-slate-100"
+                      >
+                        Let us keep watching for you
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex flex-col gap-3 sm:items-end">
                   <Link
@@ -507,6 +786,7 @@ export default function DiscoverPage() {
                     }}
                     className={reviewLikedButtonClassName}
                   >
+                    <ThumbsUp size={18} strokeWidth={0} className="fill-current" />
                     Review Liked
                   </Link>
                   <button
@@ -514,7 +794,7 @@ export default function DiscoverPage() {
                     onClick={handleKeepExploringShortcut}
                     className="app-button inline-flex justify-center rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/25 hover:bg-white/10"
                   >
-                    Keep Exploring
+                    Keep browsing
                   </button>
                   <Link
                     href="/find-the-one"
@@ -525,6 +805,22 @@ export default function DiscoverPage() {
                 </div>
               </div>
             </div>
+          ) : hasNoMatches ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+                No matches right now
+                <span className="block text-sm text-slate-400">
+                  Try widening your budget, vehicle type, or brands.
+                </span>
+              </p>
+              <Link
+                href="/like"
+                className="app-button inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
+              >
+                <ThumbsUp size={18} strokeWidth={0} className="fill-current" />
+                Review Liked
+              </Link>
+            </div>
           ) : (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
@@ -532,8 +828,9 @@ export default function DiscoverPage() {
               </p>
               <Link
                 href="/like"
-                className="app-button inline-flex w-fit items-center rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
+                className="app-button inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
               >
+                <ThumbsUp size={18} strokeWidth={0} className="fill-current" />
                 Review Liked
               </Link>
             </div>
@@ -581,7 +878,7 @@ export default function DiscoverPage() {
                   </span>
                   <div>
                     <p className="text-lg font-semibold text-white">
-                      In your budget
+                      Budget matches
                     </p>
                     <p className="mt-1 text-base leading-7 text-slate-300">
                       Cars that fit your price range, even if they don’t match every preference.
@@ -658,7 +955,7 @@ export default function DiscoverPage() {
                   }`}
                 >
                   <DollarSign size={16} strokeWidth={2.4} aria-hidden="true" />
-                  In your budget
+                  Budget matches
                 </button>
               ) : null}
               <button
@@ -743,7 +1040,7 @@ export default function DiscoverPage() {
           <div className="mt-4">
             <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
               {exploreCars.map((car, index) => {
-                const carState = carProgress[car.id]?.state;
+                const carState = inventoryCarProgress[car.id]?.state;
                 const cardStatus =
                   carState === "liked"
                     ? "liked"
@@ -775,7 +1072,7 @@ export default function DiscoverPage() {
                         <CarBrowseActions
                           variant="dark"
                           status={cardStatus}
-                          onViewDetails={() => setActiveDetailsCar(car)}
+                          onViewDetails={() => handleViewDetails(car)}
                           onLike={() => setCarState(car.id, "liked")}
                           onTopPick={() => handleTopPickRequest(car.id)}
                           onPass={() => setCarState(car.id, "rejected")}

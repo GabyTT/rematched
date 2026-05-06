@@ -17,6 +17,12 @@ import {
 import { useJourney, type Preferences } from "@/components/JourneyProvider";
 import { useMounted } from "@/hooks/useMounted";
 import { DEFAULT_BRANDS } from "@/lib/brands";
+import {
+  readActivePreferenceProfile,
+  replaceSelectedPreferenceBrands,
+  saveActivePreferenceProfile,
+} from "@/lib/phase1ProfilePreferences";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const parseBudget = (value: string) => {
   const digitsOnly = value.replace(/[^\d]/g, "");
@@ -51,6 +57,8 @@ const DEFAULT_MIN_BUDGET = 80000;
 const DEFAULT_MAX_BUDGET = 300000;
 const formatBudgetSliderValue = (value: number) =>
   `TT$${new Intl.NumberFormat("en-US").format(value)}`;
+const formatCompactBudgetSliderValue = (value: number) =>
+  value >= 1000 ? `TT$${Math.round(value / 1000)}k` : `TT$${value}`;
 
 type PreferenceFormSnapshot = {
   minBudget: number | null;
@@ -506,8 +514,12 @@ export function FindTheOnePage() {
   const mounted = useMounted();
   const router = useRouter();
   const { preferences, updatePreferences } = useJourney();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formConfirmation, setFormConfirmation] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isLoadingSavedPreferences, setIsLoadingSavedPreferences] =
+    useState(false);
   const [isDirtyPopActive, setIsDirtyPopActive] = useState(false);
   const [isDefineHelpOpen, setIsDefineHelpOpen] = useState(false);
   const [defineCardBounds, setDefineCardBounds] =
@@ -553,6 +565,7 @@ export function FindTheOnePage() {
   const vehicleTypeFieldRef = useRef<HTMLSelectElement | null>(null);
   const brandSearchFieldRef = useRef<HTMLInputElement | null>(null);
   const availableBrandsScrollRef = useRef<HTMLDivElement | null>(null);
+  const updatePreferencesRef = useRef(updatePreferences);
   const [showBrandScrollCue, setShowBrandScrollCue] = useState(false);
   const [showBrandLeftFade, setShowBrandLeftFade] = useState(false);
   const availableBrands = useMemo(() => DEFAULT_BRANDS, []);
@@ -659,6 +672,25 @@ export function FindTheOnePage() {
   const getAttentionFieldClassName = (target: DefineAttentionTarget) =>
     defineAttentionTarget === target ? "define-field-attention" : "";
 
+  const applyPreferenceValuesToForm = useCallback(
+    (nextPreferences: Preferences) => {
+      setMinBudgetInput(
+        nextPreferences.minBudget === null
+          ? ""
+          : nextPreferences.minBudget.toLocaleString("en-US"),
+      );
+      setMaxBudgetInput(
+        nextPreferences.maxBudget === null
+          ? ""
+          : nextPreferences.maxBudget.toLocaleString("en-US"),
+      );
+      setVehicleType(nextPreferences.vehicleType);
+      setBrands(nextPreferences.brand);
+      setModel(nextPreferences.model);
+    },
+    [],
+  );
+
   const clearDirtyShakeTimers = useCallback(() => {
     if (dirtyShakeTimeoutRef.current !== null) {
       window.clearTimeout(dirtyShakeTimeoutRef.current);
@@ -670,6 +702,10 @@ export function FindTheOnePage() {
       dirtyShakeResetTimeoutRef.current = null;
     }
   }, []);
+
+  useEffect(() => {
+    updatePreferencesRef.current = updatePreferences;
+  }, [updatePreferences]);
 
   useEffect(() => {
     clearDirtyShakeTimers();
@@ -699,6 +735,64 @@ export function FindTheOnePage() {
       clearDirtyShakeTimers();
     };
   }, [clearDirtyShakeTimers, currentFormValues, isDirty]);
+
+  useEffect(() => {
+    if (isDirty) {
+      return;
+    }
+
+    applyPreferenceValuesToForm(preferences);
+  }, [applyPreferenceValuesToForm, isDirty, preferences]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadSavedPreferences = async () => {
+      setIsLoadingSavedPreferences(true);
+      setFormError(null);
+
+      try {
+        const savedPreferenceProfile =
+          await readActivePreferenceProfile(supabase);
+
+        if (!isActive || !savedPreferenceProfile) {
+          return;
+        }
+
+        const nextPreferences: Preferences = {
+          minBudget: savedPreferenceProfile.budget_min,
+          maxBudget: savedPreferenceProfile.budget_max,
+          vehicleType: savedPreferenceProfile.vehicle_type ?? "",
+          brand: normalizeBrands(
+            savedPreferenceProfile.preference_profile_brands.map(
+              (brand) => brand.brand_name,
+            ),
+          ),
+          model: savedPreferenceProfile.model_query ?? "",
+        };
+
+        updatePreferencesRef.current(nextPreferences);
+        applyPreferenceValuesToForm(nextPreferences);
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        console.error(error);
+        setFormError("Saved preferences could not be loaded. Local preferences are still available.");
+      } finally {
+        if (isActive) {
+          setIsLoadingSavedPreferences(false);
+        }
+      }
+    };
+
+    loadSavedPreferences();
+
+    return () => {
+      isActive = false;
+    };
+  }, [applyPreferenceValuesToForm, supabase]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -816,21 +910,58 @@ export function FindTheOnePage() {
     setMaxBudgetInput(nextValue.toLocaleString("en-US"));
   };
 
-  const handleSaveAndDiscover = useCallback(() => {
+  const handleSaveAndDiscover = useCallback(async () => {
     if (isSubmitting || !budgetRangeIsValid) {
       return false;
     }
 
     setIsSubmitting(true);
+    setFormError(null);
+
+    const nextPreferences: Preferences = {
+      minBudget: currentFormValues.minBudget,
+      maxBudget: currentFormValues.maxBudget,
+      vehicleType: currentFormValues.vehicleType,
+      brand: currentFormValues.brands,
+      model: currentFormValues.model,
+    };
 
     if (isDirty) {
-      updatePreferences({
-        minBudget: currentFormValues.minBudget,
-        maxBudget: currentFormValues.maxBudget,
-        vehicleType: currentFormValues.vehicleType,
-        brand: currentFormValues.brands,
-        model: currentFormValues.model,
-      });
+      updatePreferences(nextPreferences);
+    }
+
+    try {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error && error.name !== "AuthSessionMissingError") {
+        throw error;
+      }
+
+      if (user) {
+        const savedPreferenceProfile = await saveActivePreferenceProfile(
+          supabase,
+          {
+            budget_min: nextPreferences.minBudget,
+            budget_max: nextPreferences.maxBudget,
+            vehicle_type: nextPreferences.vehicleType || null,
+            model_query: nextPreferences.model || null,
+          },
+        );
+
+        await replaceSelectedPreferenceBrands(
+          supabase,
+          savedPreferenceProfile.id,
+          nextPreferences.brand,
+        );
+      }
+    } catch (error) {
+      console.error(error);
+      setFormError("Preferences were saved locally, but Supabase could not save them yet.");
+      setIsSubmitting(false);
+      return false;
     }
 
     wasDirtyRef.current = false;
@@ -849,12 +980,13 @@ export function FindTheOnePage() {
     budgetRangeIsValid,
     clearDirtyShakeTimers,
     router,
+    supabase,
     updatePreferences,
   ]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    handleSaveAndDiscover();
+    void handleSaveAndDiscover();
   };
 
   useEffect(() => {
@@ -1199,8 +1331,8 @@ export function FindTheOnePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(209,19,58,0.16),transparent_24%),linear-gradient(180deg,#011118_0%,#000000_44%,#04121a_100%)] text-foreground">
-      <div className="mx-auto grid w-full max-w-7xl gap-6 px-5 py-5 sm:px-8 lg:grid-cols-[1.18fr_0.82fr] lg:px-12 lg:py-6">
+    <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(209,19,58,0.16),transparent_24%),linear-gradient(180deg,#011118_0%,#000000_44%,#04121a_100%)] text-foreground">
+      <div className="mx-auto grid w-full max-w-full gap-6 px-5 py-5 sm:px-8 lg:max-w-7xl lg:grid-cols-[1.18fr_0.82fr] lg:px-12 lg:py-6">
         <section
           ref={defineCardRef}
           className={`page-panel motion-rise-fade motion-delay-1 rounded-[32px] border border-[#d9e0e7] p-5 text-[#17212b] transition sm:p-6 lg:p-5 ${
@@ -1210,8 +1342,8 @@ export function FindTheOnePage() {
           } ${defineAttentionClassName}`}
         >
           <div>
-            <div className="mb-3 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
+            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <div className="flex min-w-0 items-center gap-3">
                 <SlidersHorizontal
                   size={28}
                   strokeWidth={2.4}
@@ -1237,7 +1369,7 @@ export function FindTheOnePage() {
                 form="define-preferences-form"
                 data-dirty={isDirty ? "true" : "false"}
                 data-pop={isDirtyPopActive ? "true" : "false"}
-                className={`app-button inline-flex items-center justify-center rounded-full border px-5 py-2 text-sm font-semibold text-white transition duration-200 hover:scale-[1.02] md:text-base disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`app-button inline-flex w-full items-center justify-center rounded-full border px-5 py-2 text-sm font-semibold text-white transition duration-200 hover:scale-[1.02] sm:w-auto md:text-base disabled:cursor-not-allowed disabled:opacity-60 ${
                   isDirty
                     ? "border-transparent bg-accent hover:brightness-110 save-discover-dirty"
                     : "save-discover-idle border-[#aebac5] bg-[#8a98a6] hover:bg-[#7b8996] hover:brightness-105"
@@ -1259,6 +1391,16 @@ export function FindTheOnePage() {
               {formConfirmation}
             </p>
           ) : null}
+          {isLoadingSavedPreferences ? (
+            <p className="mt-4 rounded-[22px] border border-[#d9e0e7] bg-[#f5f7fa] px-5 py-3 text-sm text-[#314154]">
+              Loading saved preferences...
+            </p>
+          ) : null}
+          {formError ? (
+            <p className="mt-4 rounded-[22px] border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700">
+              {formError}
+            </p>
+          ) : null}
 
           <form
             id="define-preferences-form"
@@ -1272,8 +1414,8 @@ export function FindTheOnePage() {
                 <span className={formLabelClassName}>
                   What price range feels right?
                 </span>
-                <div className="rounded-[24px] border border-[#d9e0e7] bg-[#f5f7fa] px-5 py-4 sm:px-6 lg:py-3.5">
-                  <div className="relative pt-10 pb-11 lg:pt-9 lg:pb-10">
+                <div className="w-full max-w-full overflow-hidden rounded-[24px] border border-[#d9e0e7] bg-[#f5f7fa] px-5 py-4 sm:px-6 lg:py-3.5">
+                  <div className="relative w-full max-w-full overflow-hidden pt-10 pb-11 lg:pt-9 lg:pb-10">
                     <div className="absolute left-0 right-0 top-12 lg:top-11 h-2 rounded-full bg-[#d8e0e6]" />
                     <div
                       className="absolute top-12 lg:top-11 h-2 rounded-full bg-[#D1133A]"
@@ -1284,7 +1426,7 @@ export function FindTheOnePage() {
                     />
 
                     <div
-                      className="absolute top-[3.95rem] lg:top-[3.6rem] -translate-x-1/2"
+                      className="absolute top-[3.95rem] hidden -translate-x-1/2 sm:block lg:top-[3.6rem]"
                       style={{ left: `${minBudgetPercent}%` }}
                     >
                       <div className="rounded-full border border-[#f3c1cc] bg-white px-3 py-1 text-sm font-semibold text-[#17212b] shadow-[0_10px_20px_rgba(15,23,42,0.12)] whitespace-nowrap">
@@ -1292,7 +1434,7 @@ export function FindTheOnePage() {
                       </div>
                     </div>
                     <div
-                      className="absolute top-0 -translate-x-1/2"
+                      className="absolute top-0 hidden -translate-x-1/2 sm:block"
                       style={{ left: `${maxBudgetPercent}%` }}
                     >
                       <div className="rounded-full border border-[#f3c1cc] bg-white px-3 py-1 text-sm font-semibold text-[#17212b] shadow-[0_10px_20px_rgba(15,23,42,0.12)] whitespace-nowrap">
@@ -1338,7 +1480,15 @@ export function FindTheOnePage() {
                       }`}
                     />
                   </div>
-                  <div className="mt-3 flex items-center justify-between text-sm font-medium text-[#647789]">
+                  <div className="mt-2 flex w-full max-w-full items-center justify-between rounded-2xl border border-[#d9e0e7] bg-white px-4 py-2 text-sm font-semibold text-[#17212b] sm:hidden">
+                    <span>
+                      Min: {formatCompactBudgetSliderValue(sliderMinBudget)}
+                    </span>
+                    <span>
+                      Max: {formatCompactBudgetSliderValue(sliderMaxBudget)}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex w-full max-w-full items-center justify-between text-sm font-medium text-[#647789]">
                     <span>{formatBudgetSliderValue(BUDGET_SLIDER_MIN)}</span>
                     <span>{formatBudgetSliderValue(BUDGET_SLIDER_MAX)}</span>
                   </div>
@@ -1400,13 +1550,13 @@ export function FindTheOnePage() {
                     value={brandQuery}
                     onChange={(event) => setBrandQuery(event.target.value)}
                     placeholder="Search brands..."
-                    className="app-input w-full bg-transparent py-3 text-base text-[#17212b] outline-none placeholder:text-[#7d8f9d]"
+                    className="app-input min-w-0 w-full bg-transparent py-3 text-base text-[#17212b] outline-none placeholder:text-[#7d8f9d]"
                   />
                 </div>
 
                 {brands.length ? (
-                  <div className="scrollbar-hidden mt-2.5 overflow-x-auto">
-                    <div className="flex min-w-max gap-2 pb-1">
+                  <div className="mt-2.5 w-full max-w-full">
+                    <div className="flex flex-wrap gap-2 pb-1">
                       {brands.map((brand) => (
                         <button
                           key={brand}
@@ -1440,9 +1590,9 @@ export function FindTheOnePage() {
                   ) : null}
                   <div
                     ref={availableBrandsScrollRef}
-                    className="scrollbar-hidden overflow-x-auto"
+                    className="w-full max-w-full overflow-hidden"
                   >
-                    <div className="flex min-w-max gap-2 pb-1 pr-20">
+                    <div className="flex flex-wrap gap-2 pb-1">
                       {filteredBrands.map((brand) => {
                         return (
                           <button
@@ -1749,7 +1899,7 @@ export function FindTheOnePage() {
                         </span>
                       </span>
 
-                      <div className="min-w-[8.5rem] rounded-[18px] border border-white/12 bg-black/22 px-3 py-2 backdrop-blur-sm">
+                      <div className="w-full max-w-[8.5rem] rounded-[18px] border border-white/12 bg-black/22 px-3 py-2 backdrop-blur-sm">
                         <div className="relative h-1.5 rounded-full bg-white/18">
                           <div className="absolute inset-y-0 left-[20%] right-[14%] rounded-full bg-[linear-gradient(90deg,rgba(255,255,255,0.12)_0%,rgba(209,19,58,0.88)_52%,rgba(255,227,195,0.56)_100%)]" />
                           <div className="absolute left-[68%] top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#ffb4c0]/70 bg-[#D1133A] shadow-[0_0_18px_rgba(209,19,58,0.38)]" />

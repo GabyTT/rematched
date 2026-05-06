@@ -14,6 +14,7 @@ export type Car = {
   brand: string;
   model: string;
   image: string;
+  ingestionListingId?: string | null;
 };
 
 export const cars: Car[] = [
@@ -140,6 +141,7 @@ export const cars: Car[] = [
     vehicleType: "sedan",
     brand: "Toyota",
     model: "Corolla",
+    ingestionListingId: "norm-5",
     image:
       "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&w=1200&q=80",
   },
@@ -248,6 +250,7 @@ export const cars: Car[] = [
     vehicleType: "luxury",
     brand: "Audi",
     model: "Q5",
+    ingestionListingId: "norm-4",
     image:
       "https://images.unsplash.com/photo-1606152421802-db97b9c7a11b?auto=format&fit=crop&w=1200&q=80",
   },

@@ -2,11 +2,14 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
-import { cars } from "@/lib/cars";
+import { cars as mockCars, type Car } from "@/lib/cars";
+import { trackGuestAction } from "@/lib/guestEngagement";
 
 export type Preferences = {
   minBudget: number | null;
@@ -22,6 +25,9 @@ type CarProgress = {
   state: CarJourneyState;
   notes: string;
   matchedAt: number | null;
+  likedAt?: string | null;
+  passedAt?: string | null;
+  topPickedAt?: string | null;
 };
 
 type StoredCarJourneyState = CarJourneyState | "discover" | "none";
@@ -31,11 +37,14 @@ type StoredCarProgress = Omit<CarProgress, "state"> & {
 };
 
 type JourneyContextValue = {
+  activeInventoryCars: Car[];
   carProgress: Record<string, CarProgress>;
   compareCarIds: string[];
   preferences: Preferences;
   isAuthenticated: boolean;
   isUnlockAlertsModalOpen: boolean;
+  updateActiveInventoryCars: (cars: Car[]) => void;
+  openUnlockAlertsModal: () => void;
   setCarState: (carId: string, state: CarJourneyState) => void;
   replaceEarliestTopPick: (carId: string) => void;
   resetCarStatuses: () => void;
@@ -64,9 +73,16 @@ const LIKES_KEY = "revmatched.likes";
 const PROGRESS_KEY = "revmatched.car-progress";
 const COMPARE_KEY = "revmatched.compare";
 const AUTH_KEY = "revmatched.authenticated";
-const SESSION_LIKE_COUNT_KEY = "revmatched.session-like-count";
-const SESSION_UNLOCK_MODAL_SHOWN_KEY = "revmatched.session-unlock-modal-shown";
-const CAR_ORDER_BY_ID = new Map(cars.map((car, index) => [car.id, index]));
+const MOCK_CAR_ORDER_BY_ID = new Map(mockCars.map((car, index) => [car.id, index]));
+
+const createDefaultCarProgress = (): CarProgress => ({
+  state: null,
+  notes: "",
+  matchedAt: null,
+  likedAt: null,
+  passedAt: null,
+  topPickedAt: null,
+});
 
 const getStoredPreferences = () => {
   if (typeof window === "undefined") {
@@ -114,12 +130,8 @@ const getStoredLikes = () => {
 };
 
 const getDefaultProgress = () =>
-  cars.reduce<Record<string, CarProgress>>((result, car) => {
-    result[car.id] = {
-      state: null,
-      notes: "",
-      matchedAt: null,
-    };
+  mockCars.reduce<Record<string, CarProgress>>((result, car) => {
+    result[car.id] = createDefaultCarProgress();
     return result;
   }, {});
 
@@ -139,15 +151,19 @@ const getStoredProgress = () => {
         carId,
         {
           ...value,
+          likedAt: typeof value.likedAt === "string" ? value.likedAt : null,
           matchedAt:
             typeof value.matchedAt === "number" &&
             Number.isFinite(value.matchedAt)
               ? value.matchedAt
               : null,
+          passedAt: typeof value.passedAt === "string" ? value.passedAt : null,
           state:
             value.state === "discover" || value.state === "none"
               ? null
               : value.state,
+          topPickedAt:
+            typeof value.topPickedAt === "string" ? value.topPickedAt : null,
         },
       ]),
     ) as Record<string, CarProgress>;
@@ -193,38 +209,19 @@ const getStoredAuthState = () => {
   return window.localStorage.getItem(AUTH_KEY) === "true";
 };
 
-const getSessionLikeCount = () => {
-  if (typeof window === "undefined") {
-    return 0;
-  }
-
-  const savedLikeCount = window.sessionStorage.getItem(SESSION_LIKE_COUNT_KEY);
-  return savedLikeCount ? Number(savedLikeCount) || 0 : 0;
-};
-
-const getSessionUnlockModalShown = () => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return (
-    window.sessionStorage.getItem(SESSION_UNLOCK_MODAL_SHOWN_KEY) === "true"
-  );
-};
-
 export function JourneyProvider({ children }: { children: ReactNode }) {
+  const [activeInventoryCars, setActiveInventoryCars] = useState<Car[]>(mockCars);
   const [preferences, setPreferences] = useState(getStoredPreferences);
   const [carProgress, setCarProgress] = useState(getStoredProgress);
   const [compareCarIds, setCompareCarIds] = useState<string[]>(
     getStoredCompareCars,
   );
   const [isAuthenticated, setIsAuthenticated] = useState(getStoredAuthState);
-  const [, setGuestSessionLikeCount] = useState(
-    getSessionLikeCount,
-  );
-  const [hasShownUnlockAlertsModalThisSession, setHasShownUnlockAlertsModalThisSession] =
-    useState(getSessionUnlockModalShown);
   const [isUnlockAlertsModalOpen, setIsUnlockAlertsModalOpen] = useState(false);
+  const activeCarOrderById = useMemo(
+    () => new Map(activeInventoryCars.map((car, index) => [car.id, index])),
+    [activeInventoryCars],
+  );
 
   const persistProgress = (next: Record<string, CarProgress>) => {
     window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(next));
@@ -233,6 +230,37 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       .map(([carId]) => carId);
     window.localStorage.setItem(LIKES_KEY, JSON.stringify(likedIds));
   };
+
+  const updateActiveInventoryCars = useCallback((nextCars: Car[]) => {
+    setActiveInventoryCars((currentCars) => {
+      const currentSignature = currentCars.map((car) => car.id).join("|");
+      const nextSignature = nextCars.map((car) => car.id).join("|");
+
+      if (currentSignature === nextSignature) {
+        return currentCars;
+      }
+
+      return nextCars;
+    });
+
+    setCarProgress((current) => {
+      let changed = false;
+      const next = { ...current };
+
+      nextCars.forEach((car) => {
+        if (!next[car.id]) {
+          next[car.id] = createDefaultCarProgress();
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        persistProgress(next);
+      }
+
+      return changed ? next : current;
+    });
+  }, []);
 
   const setCarState = (carId: string, state: CarJourneyState) => {
     const previousState = carProgress[carId]?.state ?? null;
@@ -243,11 +271,13 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       state === "matched" && previousState !== "matched" && currentMatchedCount >= 3
         ? previousState
         : state;
+    const actionTimestamp = new Date().toISOString();
 
     setCarProgress((current) => {
       const next = {
         ...current,
         [carId]: {
+          ...createDefaultCarProgress(),
           ...current[carId],
           state: nextState,
           matchedAt:
@@ -256,34 +286,25 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
                 ? current[carId]?.matchedAt ?? Date.now()
                 : Date.now()
               : null,
+          likedAt:
+            nextState === "liked" ? actionTimestamp : current[carId]?.likedAt ?? null,
+          passedAt:
+            nextState === "rejected" ? actionTimestamp : current[carId]?.passedAt ?? null,
+          topPickedAt:
+            nextState === "matched"
+              ? actionTimestamp
+              : current[carId]?.topPickedAt ?? null,
         },
       };
       persistProgress(next);
       return next;
     });
 
-    setGuestSessionLikeCount((current) => {
-      if (
-        isAuthenticated ||
-        state !== "liked" ||
-        previousState === "liked"
-      ) {
-        return current;
-      }
-
-      const next = current + 1;
-      window.sessionStorage.setItem(SESSION_LIKE_COUNT_KEY, String(next));
-
-      if (next >= 4 && !hasShownUnlockAlertsModalThisSession) {
-        setIsUnlockAlertsModalOpen(true);
-        setHasShownUnlockAlertsModalThisSession(true);
-        window.sessionStorage.setItem(SESSION_UNLOCK_MODAL_SHOWN_KEY, "true");
-      }
-
-      return next;
-    });
-
     if (nextState !== previousState) {
+      if (!isAuthenticated) {
+        trackGuestAction();
+      }
+
       if (nextState === "liked" && previousState !== "liked") {
         window.dispatchEvent(
           new CustomEvent("revmatched:roadmap-transition", {
@@ -322,6 +343,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
 
   const replaceEarliestTopPick = (carId: string) => {
     const previousState = carProgress[carId]?.state ?? null;
+    const actionTimestamp = new Date().toISOString();
     const removedTopPickId =
       Object.entries(carProgress)
         .filter(([id, value]) => value.state === "matched" && id !== carId)
@@ -334,8 +356,12 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
           }
 
           return (
-            (CAR_ORDER_BY_ID.get(firstId) ?? Number.MAX_SAFE_INTEGER) -
-            (CAR_ORDER_BY_ID.get(secondId) ?? Number.MAX_SAFE_INTEGER)
+            (activeCarOrderById.get(firstId) ??
+              MOCK_CAR_ORDER_BY_ID.get(firstId) ??
+              Number.MAX_SAFE_INTEGER) -
+            (activeCarOrderById.get(secondId) ??
+              MOCK_CAR_ORDER_BY_ID.get(secondId) ??
+              Number.MAX_SAFE_INTEGER)
           );
         })[0]?.[0] ?? null;
 
@@ -352,16 +378,20 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
 
       if (removedTopPickId) {
         next[removedTopPickId] = {
+          ...createDefaultCarProgress(),
           ...current[removedTopPickId],
           state: "liked",
           matchedAt: null,
+          likedAt: actionTimestamp,
         };
       }
 
       next[carId] = {
+        ...createDefaultCarProgress(),
         ...current[carId],
         state: "matched",
         matchedAt: Date.now(),
+        topPickedAt: actionTimestamp,
       };
 
       persistProgress(next);
@@ -381,6 +411,10 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     }
 
     if (previousState !== "matched") {
+      if (!isAuthenticated) {
+        trackGuestAction();
+      }
+
       window.dispatchEvent(
         new CustomEvent("revmatched:roadmap-transition", {
           detail: {
@@ -397,6 +431,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       const next = {
         ...current,
         [carId]: {
+          ...createDefaultCarProgress(),
           ...current[carId],
           notes,
         },
@@ -466,6 +501,10 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     setIsUnlockAlertsModalOpen(false);
   };
 
+  const openUnlockAlertsModal = () => {
+    setIsUnlockAlertsModalOpen(true);
+  };
+
   const markAuthenticated = () => {
     setIsAuthenticated(true);
     window.localStorage.setItem(AUTH_KEY, "true");
@@ -481,11 +520,14 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
   return (
     <JourneyContext.Provider
       value={{
+        activeInventoryCars,
         carProgress,
         compareCarIds,
         preferences,
         isAuthenticated,
         isUnlockAlertsModalOpen,
+        updateActiveInventoryCars,
+        openUnlockAlertsModal,
         setCarState,
         replaceEarliestTopPick,
         resetCarStatuses,

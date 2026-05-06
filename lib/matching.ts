@@ -1,7 +1,16 @@
 import type { CarJourneyState, Preferences } from "@/components/JourneyProvider";
+import { getRecommendationProfileForListingId } from "@/lib/adminIngestion";
 import type { Car } from "@/lib/cars";
 
 export const NEAR_BUDGET_BUFFER = 10000;
+
+const defaultBuyerRecommendationProfile = {
+  confidenceNotes: [
+    "Local seeded inventory is treated as eligible until it is linked to imported listing review state.",
+  ],
+  recommendationEligibility: "eligible" as const,
+  recommendationReasons: [],
+};
 
 const normalize = (value: string | null | undefined) =>
   value?.trim().toLowerCase() ?? "";
@@ -125,6 +134,53 @@ export function carIsAvailable(car: Car) {
     !["inactive", "sold", "unavailable"].includes(status);
 }
 
+export function getBuyerRecommendationProfile(car: Car) {
+  if (!car.ingestionListingId) {
+    return defaultBuyerRecommendationProfile;
+  }
+
+  return (
+    getRecommendationProfileForListingId(car.ingestionListingId) ??
+    defaultBuyerRecommendationProfile
+  );
+}
+
+export function isBuyerVisibleListing(car: Car) {
+  if (!carIsAvailable(car)) {
+    return false;
+  }
+
+  const recommendationEligibility =
+    getBuyerRecommendationProfile(car).recommendationEligibility;
+
+  return (
+    recommendationEligibility !== "review_required" &&
+    recommendationEligibility !== "hidden"
+  );
+}
+
+export function isPrimaryDiscoveryEligible(car: Car) {
+  if (!carIsAvailable(car)) {
+    return false;
+  }
+
+  return getBuyerRecommendationProfile(car).recommendationEligibility === "eligible";
+}
+
+export function isBroadExplorationEligible(car: Car) {
+  if (!carIsAvailable(car)) {
+    return false;
+  }
+
+  const recommendationEligibility =
+    getBuyerRecommendationProfile(car).recommendationEligibility;
+
+  return (
+    recommendationEligibility === "eligible" ||
+    recommendationEligibility === "limited"
+  );
+}
+
 export function carMatchesPreferences(car: Car, preferences: Preferences) {
   if (!hasUsablePreferences(preferences)) {
     return false;
@@ -147,7 +203,7 @@ export function getDiscoverableCars(
   >,
 ) {
   return allCars.filter((car) => {
-    if (!carIsAvailable(car)) {
+    if (!isPrimaryDiscoveryEligible(car)) {
       return false;
     }
 

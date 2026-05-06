@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowRightLeft,
   CarFront,
@@ -14,12 +14,16 @@ import {
   Settings,
   Shield,
   User,
+  UserPlus,
   X,
 } from "lucide-react";
 
 import { Roadmap, type RoadmapStep } from "@/components/Roadmap";
 import { UnlockAlertsModal } from "@/components/UnlockAlertsModal";
 import { useJourney } from "@/components/JourneyProvider";
+import { loadInventoryWithFallback } from "@/lib/inventoryProvider";
+import { readCurrentUserProfile } from "@/lib/phase1ProfilePreferences";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const appNavItems = [
   { href: "/", label: "Home", section: "home", icon: House },
@@ -29,6 +33,7 @@ const appNavItems = [
 ];
 
 const accountNavItems = [
+  { href: "/sign-up", label: "Sign Up", section: "sign-up", icon: UserPlus },
   { href: "/profile", label: "Profile", section: "profile", icon: User },
   { href: "/profile", label: "Settings", section: "settings", icon: Settings },
   { href: "/admin", label: "Admin", section: "admin", icon: Shield },
@@ -45,11 +50,15 @@ const findTheOnePaths = new Set(["/find-the-one", "/discover", "/like", "/match"
 
 export function AppChrome() {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
   const {
     isUnlockAlertsModalOpen,
     closeUnlockAlertsModal,
     logOut,
+    updateActiveInventoryCars,
   } = useJourney();
   const activeStep = stepByPathname[pathname] ?? "define";
   const isInFindTheOne = findTheOnePaths.has(pathname);
@@ -61,6 +70,8 @@ export function AppChrome() {
         ? "moving-on"
         : pathname === "/profile"
           ? "profile"
+          : pathname === "/sign-up"
+            ? "sign-up"
           : pathname.startsWith("/admin")
             ? "admin"
           : "home";
@@ -80,6 +91,61 @@ export function AppChrome() {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [isDrawerOpen]);
 
+  useEffect(() => {
+    let isActive = true;
+
+    const loadCurrentUserName = async () => {
+      try {
+        const profile = await readCurrentUserProfile(supabase);
+
+        if (!isActive) {
+          return;
+        }
+
+        setUserName(profile?.display_name?.trim() || null);
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        console.error(error);
+        setUserName(null);
+      }
+    };
+    const loadActiveInventory = async () => {
+      try {
+        const inventory = await loadInventoryWithFallback(supabase);
+
+        if (!isActive) {
+          return;
+        }
+
+        updateActiveInventoryCars(inventory.cars);
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        console.error(error);
+      }
+    };
+
+    void loadCurrentUserName();
+    void loadActiveInventory();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      void loadCurrentUserName();
+      void loadActiveInventory();
+    });
+
+    return () => {
+      isActive = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase, updateActiveInventoryCars]);
+
   const handleDiscoverClick = (href: string) => {
     if (href === "/discover" && pathname === "/discover") {
       window.dispatchEvent(new Event("revmatched:refresh-discover"));
@@ -91,6 +157,13 @@ export function AppChrome() {
     }
 
     setIsDrawerOpen(false);
+  };
+  const handleLogOut = async () => {
+    await supabase.auth.signOut();
+    logOut();
+    setUserName(null);
+    setIsDrawerOpen(false);
+    router.push("/");
   };
   const activeDrawerClass =
     "text-white";
@@ -108,8 +181,8 @@ export function AppChrome() {
 
   return (
     <>
-      <header className="border-b border-input bg-panel/95">
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-3 sm:px-8 lg:px-12">
+      <header className="w-full max-w-full overflow-x-hidden border-b border-input bg-panel/95">
+        <div className="mx-auto grid w-full max-w-full grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-3 sm:px-8 lg:max-w-7xl lg:px-12">
           <button
             type="button"
             onClick={() => setIsDrawerOpen(true)}
@@ -123,7 +196,13 @@ export function AppChrome() {
           <Link href="/" className="justify-self-center text-lg font-semibold tracking-[0.2em] text-white">
             REVMATCHED
           </Link>
-          <span className="h-10 w-10" aria-hidden="true" />
+          {userName ? (
+            <span className="justify-self-end truncate rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-slate-200">
+              {userName}
+            </span>
+          ) : (
+            <span className="h-10 w-10" aria-hidden="true" />
+          )}
         </div>
       </header>
 
@@ -234,8 +313,7 @@ export function AppChrome() {
               <button
                 type="button"
                 onClick={() => {
-                  logOut();
-                  setIsDrawerOpen(false);
+                  void handleLogOut();
                 }}
                 data-active="false"
                 className={`${drawerItemClass} text-slate-400 hover:bg-white/[0.04] hover:text-slate-100`}

@@ -12,7 +12,6 @@ import {
 
 import { useJourney } from "@/components/JourneyProvider";
 import { useMounted } from "@/hooks/useMounted";
-import { cars } from "@/lib/cars";
 import { getDiscoverableCars, hasUsablePreferences } from "@/lib/matching";
 
 type RoadmapStep = "define" | "discover" | "like" | "match";
@@ -25,6 +24,11 @@ type RoadmapTransition = {
   connectorIndex: number;
   direction: "forward" | "reverse";
   destination: RoadmapStep;
+};
+
+type DiscoverCountDetail = {
+  count?: unknown;
+  source?: unknown;
 };
 
 const roadmapSteps = [
@@ -56,9 +60,12 @@ const roadmapSteps = [
 
 export function Roadmap({ step }: RoadmapProps) {
   const mounted = useMounted();
-  const { carProgress, preferences } = useJourney();
+  const { activeInventoryCars, carProgress, preferences } = useJourney();
   const [activeTransition, setActiveTransition] =
     useState<RoadmapTransition | null>(null);
+  const [activeDiscoverCount, setActiveDiscoverCount] = useState<number | null>(
+    null,
+  );
   const transitionFrameRef = useRef<number | null>(null);
   const transitionTimeoutRef = useRef<number | null>(null);
   const activeIndex = roadmapSteps.findIndex((item) => item.key === step);
@@ -87,14 +94,19 @@ export function Roadmap({ step }: RoadmapProps) {
       window.dispatchEvent(new Event("revmatched:refresh-discover"));
     }
   };
-  const discoverCount = getDiscoverableCars(cars, preferences, carProgress).length;
+  const fallbackDiscoverCount = getDiscoverableCars(
+    activeInventoryCars,
+    preferences,
+    carProgress,
+  ).length;
+  const discoverCount = activeDiscoverCount ?? fallbackDiscoverCount;
   const shouldGuideDefine =
     mounted && step === "discover" && !hasUsablePreferences(preferences);
-  const likeCount = Object.values(carProgress).filter(
-    (value) => value.state === "liked",
+  const likeCount = activeInventoryCars.filter(
+    (car) => carProgress[car.id]?.state === "liked",
   ).length;
-  const matchCount = Object.values(carProgress).filter(
-    (value) => value.state === "matched",
+  const matchCount = activeInventoryCars.filter(
+    (car) => carProgress[car.id]?.state === "matched",
   ).length;
   const stepIndex = {
     define: 0,
@@ -181,6 +193,30 @@ export function Roadmap({ step }: RoadmapProps) {
       clearTransitionTimers();
     };
   }, [clearTransitionTimers]);
+
+  useEffect(() => {
+    const handleDiscoverCount = (event: Event) => {
+      const detail =
+        event instanceof CustomEvent
+          ? (event.detail as DiscoverCountDetail)
+          : null;
+
+      if (!detail || typeof detail.count !== "number") {
+        return;
+      }
+
+      setActiveDiscoverCount(detail.count);
+    };
+
+    window.addEventListener("revmatched:discover-count", handleDiscoverCount);
+
+    return () => {
+      window.removeEventListener(
+        "revmatched:discover-count",
+        handleDiscoverCount,
+      );
+    };
+  }, []);
 
   return (
     <section className="sticky top-0 z-40 border-b border-white/5 bg-[linear-gradient(180deg,rgba(3,11,17,0.92)_0%,rgba(3,11,17,0.76)_100%)]">

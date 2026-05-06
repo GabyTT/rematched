@@ -10,12 +10,16 @@ import { NotesModal } from "@/components/NotesModal";
 import { TopPickLimitSheet } from "@/components/TopPickLimitSheet";
 import { useJourney } from "@/components/JourneyProvider";
 import { useMounted } from "@/hooks/useMounted";
-import { cars } from "@/lib/cars";
 
 export default function LikePage() {
   const mounted = useMounted();
-  const { carProgress, setCarState, replaceEarliestTopPick, updateCarNotes } =
-    useJourney();
+  const {
+    activeInventoryCars,
+    carProgress,
+    setCarState,
+    replaceEarliestTopPick,
+    updateCarNotes,
+  } = useJourney();
   const [activeNotesCarId, setActiveNotesCarId] = useState<string | null>(null);
   const [activeDetailsCarId, setActiveDetailsCarId] = useState<string | null>(null);
   const [isLikedHelpOpen, setIsLikedHelpOpen] = useState(false);
@@ -28,10 +32,10 @@ export default function LikePage() {
   const reviewTopPicksPulseFrameRef = useRef<number | null>(null);
   const reviewTopPicksPulseTimeoutRef = useRef<number | null>(null);
 
-  const reviewCars = cars.filter((car) =>
+  const reviewCars = activeInventoryCars.filter((car) =>
     ["liked", "matched"].includes(carProgress[car.id]?.state ?? ""),
   );
-  const engagedCount = cars.filter(
+  const engagedCount = activeInventoryCars.filter(
     (car) => carProgress[car.id]?.state === "matched",
   ).length;
   const hasTopPicks = engagedCount > 0;
@@ -40,10 +44,10 @@ export default function LikePage() {
     ? "app-button inline-flex w-fit items-center rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
     : "inline-flex w-fit cursor-default items-center rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-slate-500 transition hover:bg-white/7";
   const activeNotesCar = activeNotesCarId
-    ? cars.find((car) => car.id === activeNotesCarId) ?? null
+    ? activeInventoryCars.find((car) => car.id === activeNotesCarId) ?? null
     : null;
   const activeDetailsCar = activeDetailsCarId
-    ? cars.find((car) => car.id === activeDetailsCarId) ?? null
+    ? activeInventoryCars.find((car) => car.id === activeDetailsCarId) ?? null
     : null;
 
   useEffect(() => {
