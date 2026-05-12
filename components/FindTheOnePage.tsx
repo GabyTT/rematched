@@ -23,6 +23,7 @@ import {
   saveActivePreferenceProfile,
 } from "@/lib/phase1ProfilePreferences";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { hasUsablePreferences } from "@/lib/matching";
 
 const parseBudget = (value: string) => {
   const digitsOnly = value.replace(/[^\d]/g, "");
@@ -548,6 +549,7 @@ export function FindTheOnePage() {
   const [budgetTransitioning, setBudgetTransitioning] = useState(false);
   const [defineAttentionTarget, setDefineAttentionTarget] =
     useState<DefineAttentionTarget | null>(null);
+  const [isDefineNudgeActive, setIsDefineNudgeActive] = useState(false);
   const [monthlyPaymentInput, setMonthlyPaymentInput] = useState("");
   const [downPaymentInput, setDownPaymentInput] = useState("");
   const [loanTermYears, setLoanTermYears] = useState<number | null>(null);
@@ -559,6 +561,9 @@ export function FindTheOnePage() {
   const budgetTransitionTimeoutRef = useRef<number | null>(null);
   const budgetSelectionTimeoutRef = useRef<number | null>(null);
   const defineAttentionTimeoutRef = useRef<number | null>(null);
+  const defineNudgeTimerRef = useRef<number | null>(null);
+  const defineNudgeResetTimerRef = useRef<number | null>(null);
+  const defineNudgeCountRef = useRef(0);
   const defineHelpPointerStartYRef = useRef<number | null>(null);
   const defineCardRef = useRef<HTMLElement | null>(null);
   const minBudgetFieldRef = useRef<HTMLInputElement | null>(null);
@@ -569,6 +574,7 @@ export function FindTheOnePage() {
   const [showBrandScrollCue, setShowBrandScrollCue] = useState(false);
   const [showBrandLeftFade, setShowBrandLeftFade] = useState(false);
   const availableBrands = useMemo(() => DEFAULT_BRANDS, []);
+  const shouldNudgeDefineCard = !hasUsablePreferences(preferences);
   const filteredBrands = availableBrands.filter((brand) =>
     !brands.includes(brand) &&
     brand.toLowerCase().includes(brandQuery.trim().toLowerCase()),
@@ -703,9 +709,53 @@ export function FindTheOnePage() {
     }
   }, []);
 
+  const clearDefineNudgeTimers = useCallback(() => {
+    if (defineNudgeTimerRef.current !== null) {
+      window.clearTimeout(defineNudgeTimerRef.current);
+      defineNudgeTimerRef.current = null;
+    }
+
+    if (defineNudgeResetTimerRef.current !== null) {
+      window.clearTimeout(defineNudgeResetTimerRef.current);
+      defineNudgeResetTimerRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     updatePreferencesRef.current = updatePreferences;
   }, [updatePreferences]);
+
+  useEffect(() => {
+    clearDefineNudgeTimers();
+    setIsDefineNudgeActive(false);
+    defineNudgeCountRef.current = 0;
+
+    if (!shouldNudgeDefineCard) {
+      return clearDefineNudgeTimers;
+    }
+
+    const scheduleNudge = (delay: number) => {
+      defineNudgeTimerRef.current = window.setTimeout(() => {
+        if (defineNudgeCountRef.current >= 3) {
+          return;
+        }
+
+        defineNudgeCountRef.current += 1;
+        setIsDefineNudgeActive(true);
+        defineNudgeResetTimerRef.current = window.setTimeout(() => {
+          setIsDefineNudgeActive(false);
+
+          if (defineNudgeCountRef.current < 3) {
+            scheduleNudge(8000);
+          }
+        }, 560);
+      }, delay);
+    };
+
+    scheduleNudge(2600);
+
+    return clearDefineNudgeTimers;
+  }, [clearDefineNudgeTimers, shouldNudgeDefineCard]);
 
   useEffect(() => {
     clearDirtyShakeTimers();
@@ -1339,7 +1389,7 @@ export function FindTheOnePage() {
             isHelperWizardOpen
               ? "bg-[#dfe5eb] opacity-[0.78] shadow-[0_1px_6px_rgba(0,0,0,0.04)]"
               : "bg-white shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
-          } ${defineAttentionClassName}`}
+          } ${defineAttentionClassName} ${isDefineNudgeActive ? "swipe-card-nudge" : ""}`}
         >
           <div>
             <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
