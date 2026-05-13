@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
 import type { Database, TablesInsert } from "../lib/database.types";
+import { evaluateListingEligibility } from "../lib/normalization/evaluateListingEligibility.ts";
 import {
   parseContactMethod,
   parseImportStatus,
@@ -217,6 +218,8 @@ function detectDuplicateSignals(input: EdgeCaseRawListing) {
   if (input.id === "edge-002") {
     return {
       duplicate_group_id: "dup-axio-2016-pdz",
+      duplicateReviewReason:
+        "Likely duplicate of edge-001 based on contact, mileage, price, and image overlap.",
       expected_duplicate_behavior:
         "Keep one buyer-visible canonical listing and flag the duplicate for review.",
     };
@@ -229,6 +232,10 @@ function detectDuplicateSignals(input: EdgeCaseRawListing) {
   ) {
     return {
       duplicate_group_id: "dup-dealer-axio-2018-roro",
+      duplicateReviewReason:
+        input.id === "edge-006"
+          ? "Dealer repost pattern should be reviewed before creating a second buyer-facing card."
+          : "Likely dealer repost of edge-006 despite changed title and price.",
       expected_duplicate_behavior:
         input.id === "edge-006"
           ? "Prefer latest canonical dealer listing only after duplicate review."
@@ -237,33 +244,6 @@ function detectDuplicateSignals(input: EdgeCaseRawListing) {
   }
 
   return {};
-}
-
-function chooseBuyerVisibilityReason(input: EdgeCaseRawListing) {
-  switch (input.id) {
-    case "edge-001":
-      return "Messy formatting, but core buyer fields are recoverable.";
-    case "edge-002":
-      return "Likely duplicate of edge-001 based on contact, mileage, price, and image overlap.";
-    case "edge-003":
-      return "Usable listing, but missing year, mileage, seller type, and location.";
-    case "edge-004":
-      return "Missing buyer-facing price; hold until price is clarified.";
-    case "edge-005":
-      return "Core fields are recoverable and seller contact channel is clear.";
-    case "edge-006":
-      return "Dealer repost pattern should be reviewed before creating a second buyer-facing card.";
-    case "edge-007":
-      return "Ambiguous model identity and missing year/mileage require review.";
-    case "edge-008":
-      return "Structured fields are strong, but image reliability should lower confidence.";
-    case "edge-009":
-      return "No image coverage and missing year/location/fuel reduce buyer trust.";
-    case "edge-010":
-      return "Likely dealer repost of edge-006 despite changed title and price.";
-    default:
-      return "Edge-case listing evaluated by local normalization test runner.";
-  }
 }
 
 function scoreNormalizationConfidence(input: EdgeCaseRawListing) {
@@ -283,37 +263,6 @@ function scoreNormalizationConfidence(input: EdgeCaseRawListing) {
   return confidenceByCase[input.id] ?? 0.5;
 }
 
-function determineEligibility(input: EdgeCaseRawListing) {
-  switch (input.id) {
-    case "edge-001":
-    case "edge-005":
-      return {
-        is_buyer_visible: true,
-        recommendation_state: "eligible" as const,
-        review_status: "approved" as const,
-      };
-    case "edge-003":
-    case "edge-008":
-      return {
-        is_buyer_visible: true,
-        recommendation_state: "limited" as const,
-        review_status: "needs_review" as const,
-      };
-    case "edge-004":
-      return {
-        is_buyer_visible: false,
-        recommendation_state: "hidden" as const,
-        review_status: "needs_review" as const,
-      };
-    default:
-      return {
-        is_buyer_visible: false,
-        recommendation_state: "review_required" as const,
-        review_status: "needs_review" as const,
-      };
-  }
-}
-
 function toDatabaseReviewStatus(reviewStatus: ActualNormalizedListing["review_status"]) {
   return reviewStatus === "needs_review" ? "review_required" : reviewStatus;
 }
@@ -321,29 +270,48 @@ function toDatabaseReviewStatus(reviewStatus: ActualNormalizedListing["review_st
 function normalizeEdgeCase(input: EdgeCaseRawListing): ActualNormalizedListing {
   const brandModel = parseBrandModel(input);
   const duplicateSignals = detectDuplicateSignals(input);
-  const eligibility = determineEligibility(input);
   const imageHealth = detectImageHealth(input.raw.images);
+  const contactMethod = parseContactMethod(input.raw.contact);
+  const importStatus = parseImportStatus(
+    `${input.raw.title ?? ""} ${input.raw.description ?? ""} ${
+      input.raw.trim ?? ""
+    }`,
+  );
+  const mileageValue = parseMileageText(input.raw.mileage);
+  const priceAmount = parsePriceText(input.raw.price);
+  const sellerType = parseSellerType(input.raw.seller);
+  const year = parseYear(input);
+  const eligibility = evaluateListingEligibility({
+    bodyType: brandModel.body_type,
+    brandName: brandModel.brand_name,
+    contactMethod,
+    duplicateReviewReason: duplicateSignals.duplicateReviewReason,
+    imageHealth,
+    locationLabel: input.raw.location,
+    mileageValue,
+    modelName: brandModel.model_name,
+    priceAmount,
+    rawPriceText: input.raw.price,
+    rawTitle: input.raw.title,
+    sellerType,
+    year,
+  });
 
   return {
     ...brandModel,
     ...duplicateSignals,
     ...eligibility,
-    buyer_visibility_reason: chooseBuyerVisibilityReason(input),
-    contact_method: parseContactMethod(input.raw.contact),
+    contact_method: contactMethod,
     image_count: input.raw.images.length,
     image_health: imageHealth,
-    import_status: parseImportStatus(
-      `${input.raw.title ?? ""} ${input.raw.description ?? ""} ${
-        input.raw.trim ?? ""
-      }`,
-    ),
+    import_status: importStatus,
     location_label: input.raw.location,
-    mileage_value: parseMileageText(input.raw.mileage),
+    mileage_value: mileageValue,
     normalization_confidence: scoreNormalizationConfidence(input),
-    price_amount: parsePriceText(input.raw.price),
-    seller_type: parseSellerType(input.raw.seller),
+    price_amount: priceAmount,
+    seller_type: sellerType,
     title: input.raw.title ?? "Untitled edge-case listing",
-    year: parseYear(input),
+    year,
   };
 }
 

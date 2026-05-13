@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 
 import { DEFAULT_BRANDS } from "../lib/brands";
 import type { Database, Tables } from "../lib/database.types";
+import { evaluateListingEligibility } from "../lib/normalization/evaluateListingEligibility";
 import {
   parseContactMethod,
   parseImportStatus,
@@ -24,6 +25,10 @@ const fallbackBrandModel = {
   brand: "Unknown make",
   model: "Unknown model",
 };
+
+function toDatabaseReviewStatus(reviewStatus: "approved" | "needs_review" | "rejected") {
+  return reviewStatus === "needs_review" ? "review_required" : reviewStatus;
+}
 
 function loadLocalEnv() {
   const envPath = resolve(process.cwd(), ".env.local");
@@ -232,10 +237,33 @@ function buildNormalizedListingValues(
   );
   const { brand, model } = parseBrandModel(rawListing.raw_title);
   const bodyType = parseBodyType(rawListing.raw_title, model);
+  const contactMethod = parseContactMethod(rawListing.raw_contact_text);
+  const importStatus = parseImportStatus(
+    `${rawListing.raw_title ?? ""} ${rawListing.raw_description ?? ""} ${
+      rawListing.raw_trim_text ?? ""
+    }`,
+  );
+  const mileageValue = parseMileageText(rawListing.raw_mileage_text);
+  const priceAmount = parsePriceText(rawListing.raw_price_text);
+  const sellerType = parseSellerType(rawListing.raw_seller_label);
   const displayName = buildDisplayName({
     brand,
     model,
     title: rawListing.raw_title,
+    year,
+  });
+  const eligibility = evaluateListingEligibility({
+    bodyType,
+    brandName: brand,
+    contactMethod,
+    imageHealth: "linked",
+    locationLabel: rawListing.raw_location_text,
+    mileageValue,
+    modelName: model,
+    priceAmount,
+    rawPriceText: rawListing.raw_price_text,
+    rawTitle: rawListing.raw_title,
+    sellerType,
     year,
   });
 
@@ -246,29 +274,24 @@ function buildNormalizedListingValues(
     source_listing_url: rawListing.source_listing_url,
     display_name: displayName,
     title: rawListing.raw_title,
-    price_amount: parsePriceText(rawListing.raw_price_text),
+    price_amount: priceAmount,
     year,
     brand_name: brand,
     model_name: model,
     trim_name: rawListing.raw_trim_text,
-    mileage_value: parseMileageText(rawListing.raw_mileage_text),
+    mileage_value: mileageValue,
     fuel_type: rawListing.raw_fuel_text?.toLowerCase() ?? null,
     transmission_type: rawListing.raw_transmission_text?.toLowerCase() ?? null,
     body_type: bodyType,
     location_label: rawListing.raw_location_text,
-    seller_type: parseSellerType(rawListing.raw_seller_label),
-    contact_method: parseContactMethod(rawListing.raw_contact_text),
-    import_status: parseImportStatus(
-      `${rawListing.raw_title ?? ""} ${rawListing.raw_description ?? ""} ${
-        rawListing.raw_trim_text ?? ""
-      }`,
-    ),
+    seller_type: sellerType,
+    contact_method: contactMethod,
+    import_status: importStatus,
     availability_status: "available",
-    review_status: "approved",
-    recommendation_state: "eligible",
-    is_buyer_visible: true,
-    buyer_visibility_reason:
-      "Manual normalization test listing approved for local buyer visibility.",
+    review_status: toDatabaseReviewStatus(eligibility.review_status),
+    recommendation_state: eligibility.recommendation_state,
+    is_buyer_visible: eligibility.is_buyer_visible,
+    buyer_visibility_reason: eligibility.buyer_visibility_reason,
     normalization_confidence: 0.85,
     source_attribution_required: true,
     source_images_allowed_for_preview: true,
