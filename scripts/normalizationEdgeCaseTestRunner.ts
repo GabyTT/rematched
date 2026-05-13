@@ -398,6 +398,10 @@ function determineEligibility(input: EdgeCaseRawListing) {
   }
 }
 
+function toDatabaseReviewStatus(reviewStatus: ActualNormalizedListing["review_status"]) {
+  return reviewStatus === "needs_review" ? "review_required" : reviewStatus;
+}
+
 function normalizeEdgeCase(input: EdgeCaseRawListing): ActualNormalizedListing {
   const brandModel = parseBrandModel(input);
   const duplicateSignals = detectDuplicateSignals(input);
@@ -707,18 +711,21 @@ async function writeResultsToLocalSupabase(results: CaseResult[]) {
 
   await clearPreviousEdgeCaseRows(supabase, listingSource.id);
 
+  const runStartedAt = new Date();
+  const runFinishedAt = new Date(runStartedAt.getTime() + 1000);
   const { data: ingestionRun, error: ingestionRunError } = await supabase
     .from("ingestion_runs")
     .insert({
       duplicate_warnings: results.filter(
         (result) => result.actual.duplicate_group_id,
       ).length,
-      finished_at: new Date().toISOString(),
+      finished_at: runFinishedAt.toISOString(),
       listing_source_id: listingSource.id,
       listings_fetched: results.length,
       listings_normalized: results.length,
       parser_errors: results.filter((result) => !result.passed).length,
       run_notes: "Manual normalization edge-case runner. Local verification only.",
+      started_at: runStartedAt.toISOString(),
       status: results.every((result) => result.passed) ? "completed" : "completed_with_warnings",
     })
     .select()
@@ -812,7 +819,7 @@ async function writeResultsToLocalSupabase(results: CaseResult[]) {
           price_amount: result.actual.price_amount,
           raw_listing_id: rawListing.id,
           recommendation_state: result.actual.recommendation_state,
-          review_status: result.actual.review_status,
+          review_status: toDatabaseReviewStatus(result.actual.review_status),
           seller_type: result.actual.seller_type,
           source_attribution_required: true,
           source_images_allowed_for_preview: result.actual.image_health === "linked",
