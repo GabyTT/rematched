@@ -5,6 +5,14 @@ import { createClient } from "@supabase/supabase-js";
 
 import { DEFAULT_BRANDS } from "../lib/brands";
 import type { Database, Tables } from "../lib/database.types";
+import {
+  parseContactMethod,
+  parseImportStatus,
+  parseMileageText,
+  parsePriceText,
+  parseSellerType,
+  parseYearFromText,
+} from "../lib/normalization/parseListingFields";
 
 type TypedSupabaseClient = ReturnType<typeof createClient<Database>>;
 type RawListing = Tables<"raw_listings">;
@@ -60,18 +68,6 @@ function getServiceRoleKey() {
   );
 }
 
-function parseNumberText(value: string | null) {
-  const digits = value?.replace(/[^\d]/g, "") ?? "";
-
-  return digits ? Number(digits) : null;
-}
-
-function parseYear(title: string | null) {
-  const year = title?.match(/\b(19|20)\d{2}\b/)?.[0];
-
-  return year ? Number(year) : null;
-}
-
 function parseBrandModel(title: string | null) {
   const normalizedTitle = title?.trim() ?? "";
   const yearlessTitle = normalizedTitle
@@ -117,48 +113,6 @@ function parseBodyType(title: string | null, model: string) {
 
   if (combinedValue.includes("corolla") || combinedValue.includes("axio")) {
     return "sedan";
-  }
-
-  return null;
-}
-
-function parseContactMethod(value: string | null) {
-  const normalizedValue = value?.toLowerCase() ?? "";
-
-  if (normalizedValue.includes("whatsapp")) {
-    return "whatsapp";
-  }
-
-  if (normalizedValue.includes("phone") || /\d{3}/.test(normalizedValue)) {
-    return "phone";
-  }
-
-  return null;
-}
-
-function parseSellerType(value: string | null) {
-  const normalizedValue = value?.toLowerCase() ?? "";
-
-  if (normalizedValue.includes("dealer")) {
-    return "dealer";
-  }
-
-  if (normalizedValue.includes("private")) {
-    return "private";
-  }
-
-  return null;
-}
-
-function parseImportStatus(description: string | null) {
-  const normalizedDescription = description?.toLowerCase() ?? "";
-
-  if (normalizedDescription.includes("local")) {
-    return "local_used";
-  }
-
-  if (normalizedDescription.includes("roro")) {
-    return "roro";
   }
 
   return null;
@@ -273,7 +227,9 @@ async function removeExistingNormalizedImages(
 function buildNormalizedListingValues(
   rawListing: RawListing,
 ): NormalizedListingInsert {
-  const year = parseYear(rawListing.raw_title);
+  const year = parseYearFromText(
+    `${rawListing.raw_title ?? ""} ${rawListing.raw_description ?? ""}`,
+  );
   const { brand, model } = parseBrandModel(rawListing.raw_title);
   const bodyType = parseBodyType(rawListing.raw_title, model);
   const displayName = buildDisplayName({
@@ -290,19 +246,23 @@ function buildNormalizedListingValues(
     source_listing_url: rawListing.source_listing_url,
     display_name: displayName,
     title: rawListing.raw_title,
-    price_amount: parseNumberText(rawListing.raw_price_text),
+    price_amount: parsePriceText(rawListing.raw_price_text),
     year,
     brand_name: brand,
     model_name: model,
     trim_name: rawListing.raw_trim_text,
-    mileage_value: parseNumberText(rawListing.raw_mileage_text),
+    mileage_value: parseMileageText(rawListing.raw_mileage_text),
     fuel_type: rawListing.raw_fuel_text?.toLowerCase() ?? null,
     transmission_type: rawListing.raw_transmission_text?.toLowerCase() ?? null,
     body_type: bodyType,
     location_label: rawListing.raw_location_text,
     seller_type: parseSellerType(rawListing.raw_seller_label),
     contact_method: parseContactMethod(rawListing.raw_contact_text),
-    import_status: parseImportStatus(rawListing.raw_description),
+    import_status: parseImportStatus(
+      `${rawListing.raw_title ?? ""} ${rawListing.raw_description ?? ""} ${
+        rawListing.raw_trim_text ?? ""
+      }`,
+    ),
     availability_status: "available",
     review_status: "approved",
     recommendation_state: "eligible",

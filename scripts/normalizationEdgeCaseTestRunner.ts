@@ -5,6 +5,14 @@ import { createClient } from "@supabase/supabase-js";
 
 import type { Database, TablesInsert } from "../lib/database.types";
 import {
+  parseContactMethod,
+  parseImportStatus,
+  parseMileageText,
+  parsePriceText,
+  parseSellerType,
+  parseYearFromText,
+} from "../lib/normalization/parseListingFields.ts";
+import {
   normalizationEdgeCaseDataset,
   type EdgeCaseRawListing,
   type ExpectedNormalizedListing,
@@ -147,41 +155,10 @@ function normalizeText(value: string | null) {
   return value?.toLowerCase().replace(/\s+/g, " ").trim() ?? "";
 }
 
-function parsePrice(value: string | null) {
-  const normalizedValue = normalizeText(value);
-
-  if (!normalizedValue || normalizedValue.includes("inbox")) {
-    return null;
-  }
-
-  const thousandsMatch = normalizedValue.match(/(\d+(?:\.\d+)?)\s*k\b/);
-
-  if (thousandsMatch) {
-    return Math.round(Number(thousandsMatch[1]) * 1000);
-  }
-
-  const digits = normalizedValue.replace(/[^\d]/g, "");
-
-  return digits ? Number(digits) : null;
-}
-
-function parseMileage(value: string | null) {
-  const normalizedValue = normalizeText(value);
-
-  if (!normalizedValue || normalizedValue.includes("unknown")) {
-    return null;
-  }
-
-  const digits = normalizedValue.replace(/[^\d]/g, "");
-
-  return digits ? Number(digits) : null;
-}
-
 function parseYear(input: EdgeCaseRawListing) {
-  const combinedValue = `${input.raw.title ?? ""} ${input.raw.description ?? ""}`;
-  const year = combinedValue.match(/\b(19|20)\d{2}\b/)?.[0];
-
-  return year ? Number(year) : null;
+  return parseYearFromText(
+    `${input.raw.title ?? ""} ${input.raw.description ?? ""}`,
+  );
 }
 
 function parseBrandModel(input: EdgeCaseRawListing) {
@@ -218,67 +195,6 @@ function parseBrandModel(input: EdgeCaseRawListing) {
     brand_name: brand ?? null,
     model_name: null,
   };
-}
-
-function parseSellerType(value: string | null) {
-  const normalizedValue = normalizeText(value);
-
-  if (normalizedValue.includes("dealer") || normalizedValue.includes("imports")) {
-    return "dealer";
-  }
-
-  if (
-    normalizedValue.includes("private") ||
-    normalizedValue.includes("owner") ||
-    normalizedValue.includes("sale")
-  ) {
-    return "private";
-  }
-
-  return null;
-}
-
-function parseContactMethod(value: string | null) {
-  const normalizedValue = normalizeText(value);
-
-  if (
-    normalizedValue.includes("whatsapp") ||
-    normalizedValue.includes("w/app") ||
-    normalizedValue.includes("wapp")
-  ) {
-    return "whatsapp";
-  }
-
-  if (/\d{3}/.test(normalizedValue) || normalizedValue.includes("phone")) {
-    return "phone";
-  }
-
-  return null;
-}
-
-function parseImportStatus(input: EdgeCaseRawListing) {
-  const combinedValue = normalizeText(
-    `${input.raw.title ?? ""} ${input.raw.description ?? ""} ${input.raw.trim ?? ""}`,
-  );
-
-  if (combinedValue.includes("roro")) {
-    return "roro";
-  }
-
-  if (combinedValue.includes("foreign used") || combinedValue.includes("fresh import")) {
-    return "foreign_used";
-  }
-
-  if (
-    combinedValue.includes("local") ||
-    combinedValue.includes("one owner") ||
-    combinedValue.includes("owner") ||
-    combinedValue.includes("buy and drive")
-  ) {
-    return "local_used";
-  }
-
-  return null;
 }
 
 function detectImageHealth(images: string[]) {
@@ -416,11 +332,15 @@ function normalizeEdgeCase(input: EdgeCaseRawListing): ActualNormalizedListing {
     contact_method: parseContactMethod(input.raw.contact),
     image_count: input.raw.images.length,
     image_health: imageHealth,
-    import_status: parseImportStatus(input),
+    import_status: parseImportStatus(
+      `${input.raw.title ?? ""} ${input.raw.description ?? ""} ${
+        input.raw.trim ?? ""
+      }`,
+    ),
     location_label: input.raw.location,
-    mileage_value: parseMileage(input.raw.mileage),
+    mileage_value: parseMileageText(input.raw.mileage),
     normalization_confidence: scoreNormalizationConfidence(input),
-    price_amount: parsePrice(input.raw.price),
+    price_amount: parsePriceText(input.raw.price),
     seller_type: parseSellerType(input.raw.seller),
     title: input.raw.title ?? "Untitled edge-case listing",
     year: parseYear(input),
