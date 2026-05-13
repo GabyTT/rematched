@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 
 import type { Database, TablesInsert } from "../lib/database.types";
 import { evaluateListingEligibility } from "../lib/normalization/evaluateListingEligibility.ts";
+import { evaluateNormalizationConfidence } from "../lib/normalization/evaluateNormalizationConfidence.ts";
 import {
   parseContactMethod,
   parseImportStatus,
@@ -20,6 +21,7 @@ import {
 } from "./normalizationEdgeCaseDataset.ts";
 
 type ActualNormalizedListing = ExpectedNormalizedListing & {
+  confidence_signals: string[];
   duplicate_group_id?: string;
   expected_duplicate_behavior?: string;
   image_count: number;
@@ -246,23 +248,6 @@ function detectDuplicateSignals(input: EdgeCaseRawListing) {
   return {};
 }
 
-function scoreNormalizationConfidence(input: EdgeCaseRawListing) {
-  const confidenceByCase: Record<string, number> = {
-    "edge-001": 0.82,
-    "edge-002": 0.88,
-    "edge-003": 0.63,
-    "edge-004": 0.7,
-    "edge-005": 0.76,
-    "edge-006": 0.84,
-    "edge-007": 0.48,
-    "edge-008": 0.72,
-    "edge-009": 0.58,
-    "edge-010": 0.8,
-  };
-
-  return confidenceByCase[input.id] ?? 0.5;
-}
-
 function toDatabaseReviewStatus(reviewStatus: ActualNormalizedListing["review_status"]) {
   return reviewStatus === "needs_review" ? "review_required" : reviewStatus;
 }
@@ -296,18 +281,35 @@ function normalizeEdgeCase(input: EdgeCaseRawListing): ActualNormalizedListing {
     sellerType,
     year,
   });
+  const confidence = evaluateNormalizationConfidence({
+    bodyType: brandModel.body_type,
+    brandName: brandModel.brand_name,
+    contactMethod,
+    imageHealth,
+    importStatus,
+    locationLabel: input.raw.location,
+    mileageValue,
+    modelName: brandModel.model_name,
+    priceAmount,
+    rawMileageText: input.raw.mileage,
+    rawPriceText: input.raw.price,
+    rawTitle: input.raw.title,
+    sellerType,
+    year,
+  });
 
   return {
     ...brandModel,
     ...duplicateSignals,
     ...eligibility,
+    confidence_signals: confidence.signals,
     contact_method: contactMethod,
     image_count: input.raw.images.length,
     image_health: imageHealth,
     import_status: importStatus,
     location_label: input.raw.location,
     mileage_value: mileageValue,
-    normalization_confidence: scoreNormalizationConfidence(input),
+    normalization_confidence: confidence.normalization_confidence,
     price_amount: priceAmount,
     seller_type: sellerType,
     title: input.raw.title ?? "Untitled edge-case listing",
