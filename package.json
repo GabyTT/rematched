@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:normalization-edge-cases": "node --experimental-transform-types scripts/normalizationEdgeCaseTestRunner.ts"
   },
   "dependencies": {
     "@react-spring/web": "^10.0.3",
