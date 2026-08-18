@@ -220,13 +220,13 @@ export function Roadmap({ step }: RoadmapProps) {
 
   return (
     <section className="sticky top-0 z-40 border-b border-white/5 bg-[linear-gradient(180deg,rgba(3,11,17,0.92)_0%,rgba(3,11,17,0.76)_100%)]">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-5 py-3 sm:px-8 lg:px-12 lg:py-4">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-5 py-2.5 sm:px-7 lg:px-10 lg:py-3">
         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-400">
           Journey roadmap
         </p>
-        <div className="overflow-x-auto pb-1">
-          <div className="relative min-w-[34rem] md:min-w-0">
-            <div className="absolute left-[12.5%] right-[12.5%] top-[2rem] grid grid-cols-3 gap-3 sm:top-9 sm:gap-4">
+        <div className="overflow-x-auto pb-0.5">
+          <div className="relative min-w-[30rem] md:min-w-0">
+            <div className="absolute left-[12.5%] right-[12.5%] top-[1.75rem] grid grid-cols-3 gap-2 sm:top-8 sm:gap-3">
               {connectorStates.map((isActive, index) => (
                 <div
                   key={roadmapSteps[index + 1]?.key}
@@ -251,7 +251,7 @@ export function Roadmap({ step }: RoadmapProps) {
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-4 gap-2 sm:gap-3">
               {roadmapSteps.map((item, index) => {
                 const isCompleted = index < activeIndex;
                 const isActive = index === activeIndex;
@@ -290,11 +290,11 @@ export function Roadmap({ step }: RoadmapProps) {
                     key={item.key}
                     href={item.href}
                     onClick={(event) => handleDiscoverClick(event, item.href)}
-                    className="nav-pill relative z-10 flex min-w-0 flex-col items-center rounded-[28px] border border-transparent px-2 py-2 text-center sm:px-3"
+                    className="nav-pill relative z-10 flex min-w-0 flex-col items-center rounded-[28px] border border-transparent px-1 py-1.5 text-center sm:px-2"
                     aria-current={isActive ? "step" : undefined}
                   >
                     <span
-                      className={`inline-flex h-[2.625rem] w-[2.625rem] items-center justify-center rounded-full border transition sm:h-[3.375rem] sm:w-[3.375rem] ${iconShellClasses} ${
+                      className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition sm:h-12 sm:w-12 ${iconShellClasses} ${
                         shouldPulseTransitionDestination
                           ? "roadmap-transition-destination-pulse"
                           : ""
@@ -302,12 +302,12 @@ export function Roadmap({ step }: RoadmapProps) {
                         shouldPulseDefineStep ? "roadmap-define-attention" : ""
                       }`}
                     >
-                      <Icon size={20} strokeWidth={2.4} aria-hidden="true" className="sm:h-6 sm:w-6" />
+                      <Icon size={18} strokeWidth={2.4} aria-hidden="true" className="sm:h-5 sm:w-5" />
                     </span>
-                    <span className="mt-3 flex items-center justify-center text-[0.92rem] font-semibold uppercase tracking-[0.12em] sm:mt-4 sm:text-[1.12rem] sm:tracking-[0.16em] md:text-[1.2rem]">
+                    <span className="mt-2 flex items-center justify-center text-[0.84rem] font-semibold uppercase tracking-[0.12em] sm:mt-3 sm:text-[1rem] sm:tracking-[0.16em] md:text-[1.08rem]">
                       <span className={titleClasses}>{label}</span>
                       {count !== null ? (
-                        <span className="ml-1.5 inline-flex min-w-8 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-semibold leading-none text-slate-200 backdrop-blur-sm transition hover:bg-white/10 sm:ml-2 sm:min-w-10 md:text-base">
+                        <span className="ml-1 inline-flex min-w-8 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm font-semibold leading-none text-slate-200 backdrop-blur-sm transition hover:bg-white/10 sm:ml-1.5 sm:min-w-10">
                           {count}
                         </span>
                       ) : null}

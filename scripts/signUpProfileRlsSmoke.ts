@@ -107,7 +107,7 @@ async function main() {
   const listings = await readBuyerVisibleNormalizedListings(supabase);
 
   assert(
-    listings.some((listing) => listing.source_listing_id === "normalized-helper-visible"),
+    listings.some((listing) => listing.display_name === "2020 Toyota Corolla"),
     "Expected RLS to allow signed-up user to read buyer-visible normalized listings.",
   );
 

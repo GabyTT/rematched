@@ -16,6 +16,8 @@ This is not a scraper implementation doc and not a database schema doc.
 
 It is a product-and-systems bridge for the inventory layer.
 
+For the current operational process, including the boundary between ingestion and admin/seller work, see [Ingestion and Admin Process](./ingestion-and-admin-process.md).
+
 ## Why This Matters
 
 Rev Matched already has a strong buyer-facing flow:

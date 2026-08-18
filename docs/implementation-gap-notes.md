@@ -422,6 +422,22 @@ This document works especially well alongside:
 - [Interaction Rules](./interaction-rules.md)
 - [RevMatched Data Dictionary](./rev-matched-data-dictionary.md)
 
+## Technical Maintenance To Do
+
+### Clean up global lint warnings without changing product behaviour
+
+**Priority:** `Later` — keep the current focus on Admin workflow work.
+
+The production build and TypeScript checks currently pass, but the global lint command still reports React state-in-effect errors and two warnings in existing components. Complete a dedicated maintenance pass that:
+
+- refactors the buyer `SwipeDeck` state-reset effect;
+- refactors the Process Cars pipeline-animation and URL-stage synchronization effects;
+- refactors the Ingest Run History selected-run synchronization effect;
+- resolves the unused Ingest scheduling setter and image-element warning where appropriate;
+- confirms that the cleanup does not change visible design, workflow rules, or buyer behaviour.
+
+This is maintenance work, not an Admin workflow requirement, and should be done as a separately scoped task.
+
 ## Closing Principle
 
 Rev Matched does not need a total reinvention of its foundation.

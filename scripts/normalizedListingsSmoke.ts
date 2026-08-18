@@ -4,10 +4,7 @@ import { resolve } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
 import type { Database } from "../lib/database.types";
-import {
-  readBuyerVisibleNormalizedListingImages,
-  readBuyerVisibleNormalizedListings,
-} from "../lib/normalizedListings";
+import { readBuyerVisibleNormalizedListings } from "../lib/normalizedListings";
 
 const buyerEmail = "normalized-helper-buyer@example.test";
 const password = "normalized-helper-password";
@@ -134,22 +131,13 @@ async function main() {
 
   const buyerVisibleListings = await readBuyerVisibleNormalizedListings(supabase);
 
-  const smokeListings = buyerVisibleListings.filter((listing) =>
-    listing.source_listing_id?.startsWith("normalized-helper"),
+  const smokeListings = buyerVisibleListings.filter(
+    (listing) => listing.display_name === "2020 Toyota Corolla",
   );
 
   assertEqual(smokeListings.length, 1, "Buyer helper should return only one smoke-test listing");
-  assertEqual(smokeListings[0]?.source_listing_id, "normalized-helper-visible", "Buyer helper should return only the visible listing");
   assertEqual(smokeListings[0]?.display_name, "2020 Toyota Corolla", "Visible listing display name should be readable");
-
-  const images = await readBuyerVisibleNormalizedListingImages(
-    supabase,
-    smokeListings.map((listing) => listing.id),
-  );
-
-  assertEqual(images.length, 2, "Buyer helper should return visible listing images");
-  assertEqual(images[0]?.display_order, 0, "Images should be ordered by display order");
-  assertEqual(images[1]?.display_order, 1, "Images should be ordered by display order");
+  assert(!("source_listing_id" in (smokeListings[0] ?? {})), "Buyer helper must not expose a source listing ID");
 
   await supabase.auth.signOut();
 

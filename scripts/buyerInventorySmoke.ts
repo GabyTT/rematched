@@ -134,8 +134,8 @@ async function main() {
   assertEqual(smokeCars[0]?.vehicleType, "sedan", "Loader should normalize listing body type");
   assertEqual(
     smokeCars[0]?.image,
-    "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&w=1200&q=80",
-    "Loader should map the primary normalized listing image",
+    "/ai-car-placeholder.png",
+    "Loader should not expose imported source imagery to buyers",
   );
 
   await supabase.auth.signOut();

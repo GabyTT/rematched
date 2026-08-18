@@ -19,7 +19,7 @@ export function CarDecisionActions({
   const isLiked = status === "liked";
   const isTopPick = status === "engaged";
   const PrimaryIcon = isLiked ? Heart : ThumbsUp;
-  const primaryLabel = isLiked ? "Top Pick?" : isTopPick ? "Back to Liked" : "Like";
+  const primaryLabel = isLiked ? "Top Pick?" : isTopPick ? "Unpick" : "Like";
   const primaryAction = isLiked ? onTopPick ?? onLike : onLike;
   const topPickDemotionClassName = isLight
     ? "border border-[#D9E0E7] bg-white text-[#16212B] hover:border-accent"

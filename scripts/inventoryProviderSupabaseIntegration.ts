@@ -3,10 +3,10 @@ import { resolve } from "node:path";
 
 import { createClient } from "@supabase/supabase-js";
 
-import type { Car } from "../lib/cars";
-import { readBuyerVisibleInventoryCars } from "../lib/buyerInventory";
-import type { Database } from "../lib/database.types";
-import { loadInventoryWithFallback } from "../lib/inventoryProvider";
+import type { Car } from "../lib/cars.ts";
+import { readBuyerVisibleInventoryCars } from "../lib/buyerInventory.ts";
+import type { Database } from "../lib/database.types.ts";
+import { loadInventoryWithFallback } from "../lib/inventoryProvider.ts";
 
 const buyerEmail = "inventory-provider-integration@example.test";
 const password = "inventory-provider-integration-password";
@@ -160,7 +160,7 @@ async function main() {
   assertEqual(providerSmokeCars.length, 1, "Provider should return one smoke-test car");
   assertCarShape(providerSmokeCars[0]);
   assertEqual(providerSmokeCars[0]?.price, "$118,000 TTD", "Provider should return formatted Car price");
-  assertEqual(providerSmokeCars[0]?.image, "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&w=1200&q=80", "Provider should return mapped Car image");
+  assertEqual(providerSmokeCars[0]?.image, "/ai-car-placeholder.png", "Provider should not expose imported source imagery to buyers");
 
   await supabase.auth.signOut();
 

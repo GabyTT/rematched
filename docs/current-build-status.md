@@ -1,6 +1,20 @@
 # RevMatched Current Build Status
 
-Last updated: May 6, 2026
+Last updated: July 23, 2026
+
+For the current operational source-to-live process, see [Ingestion and Admin Process](./ingestion-and-admin-process.md). This file is a build-history snapshot and may retain older implementation context.
+
+## Local Development and Testing Rule
+
+Use **http://localhost:3001** for Rev Matched. Port 3000 is reserved for another local app and must not be used for this project.
+
+Start Rev Matched with:
+
+```bash
+npm run dev
+```
+
+The project command is configured to start Next.js on port 3001.
 
 ## Milestone Summary
 
@@ -113,3 +127,28 @@ Suggested focus:
 5. Keep buyer-facing Discover protected by the existing visibility rules.
 
 The goal of the next phase is to move from manually seeded normalized inventory toward a repeatable ingestion pipeline that can safely feed real buyer-visible listings.
+
+### Ingestion phase started
+
+- A reusable source-adapter contract now lives under `lib/ingestion/`.
+- The first controlled JSON adapter supports validation-only dry runs and explicit local Supabase writes.
+- Raw writes create ingestion-run records, preserve the source payload, link images, and safely update listings with the same stable source ID.
+- A reusable controlled normalization step now converts raw listings into normalized inventory using the existing parsing, confidence, and eligibility rules.
+- Local validation on July 13, 2026 stored and normalized two sample listings. Both remained safely hidden from buyers with `review_required` because the controlled fixture has no approved pics.
+- The Admin Listings screen now reads real normalized inventory from local Supabase and shows database-backed confidence, review, recommendation, and buyer-visibility states. This service-role view is deliberately restricted to local development until server-side admin authentication is added.
+- The ingestion workflow now includes an image-safety gate: unauthorized or missing source images use a neutral AI-generated thumbnail with a visible “not the actual vehicle” disclosure. Source previews remain blocked until permission is confirmed.
+- Buyer-facing imported inventory now carries source name and original-listing URL through the shared car model. Cards, details, and comparison views display source attribution without exposing raw ingestion records.
+- The next source decision is intentionally still open: confirm permitted access and attribution/image rules before connecting a live marketplace or dealer feed.
+- Usage is documented in `docs/controlled-ingestion-adapter.md`.
+
+## Technical Follow-Up
+
+### SwipeDeck lint issue
+
+- Status: deferred for a later cleanup pass.
+- File: `components/SwipeDeck.tsx`
+- Location observed: around line 109.
+- Check: run `npm run lint`.
+- Current lint rule: `react-hooks/set-state-in-effect`.
+- Issue: the deck-reset effect calls React state setters synchronously, beginning with `setDiscoverDeck(cars)`. ESLint flags this because synchronous state updates inside an effect can cause cascading renders.
+- Before changing it, preserve the current behavior when the incoming car deck changes: reset the displayed deck, initial deck size, current index, swipe direction, and completion-shake state.

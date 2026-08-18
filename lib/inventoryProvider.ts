@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { cars as mockCars, type Car } from "@/lib/cars";
-import type { Database } from "@/lib/database.types";
-import { readBuyerVisibleInventoryCars } from "@/lib/buyerInventory";
+import { cars as mockCars, type Car } from "./cars.ts";
+import type { Database } from "./database.types.ts";
+import { readBuyerVisibleInventoryCars } from "./buyerInventory.ts";
 
 type TypedSupabaseClient = SupabaseClient<Database>;
 type InventoryLoader = (supabase: TypedSupabaseClient) => Promise<Car[]>;

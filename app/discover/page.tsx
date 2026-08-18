@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DollarSign, Grid2x2, RotateCcw, Search, ThumbsUp } from "lucide-react";
+import { ArrowLeft, ArrowRight, DollarSign, Grid2x2, RotateCcw, Search } from "lucide-react";
 
 import { CarBrowseActions } from "@/components/CarBrowseActions";
 import { CarCard } from "@/components/CarCard";
@@ -13,7 +13,10 @@ import {
 } from "@/components/SwipeDeck";
 import { SponsorCard } from "@/components/SponsorCard";
 import { TopPickLimitSheet } from "@/components/TopPickLimitSheet";
-import { useJourney } from "@/components/JourneyProvider";
+import {
+  useJourney,
+  type Preferences,
+} from "@/components/JourneyProvider";
 import { useMounted } from "@/hooks/useMounted";
 import { cars as mockCars, type Car } from "@/lib/cars";
 import { loadInventoryWithFallback, type InventoryLoadResult } from "@/lib/inventoryProvider";
@@ -51,6 +54,55 @@ const formatBudgetRange = (minBudget: number | null, maxBudget: number | null) =
   minBudget !== null && maxBudget !== null
     ? `${budgetFormatter.format(minBudget)}-${budgetFormatter.format(maxBudget)} TTD`
     : "No range set yet";
+
+const DISCOVER_PREFERENCES_HANDOFF_KEY =
+  "revmatched.discover-preferences-handoff";
+
+const isBudgetValue = (value: unknown): value is number | null =>
+  value === null ||
+  (typeof value === "number" && Number.isFinite(value));
+
+const readDiscoverPreferencesHandoff = (): Preferences | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawHandoff = window.sessionStorage.getItem(
+      DISCOVER_PREFERENCES_HANDOFF_KEY,
+    );
+    if (!rawHandoff) {
+      return null;
+    }
+
+    const parsed = JSON.parse(rawHandoff) as Partial<Preferences>;
+    const brands =
+      Array.isArray(parsed.brand) &&
+      parsed.brand.every((brand) => typeof brand === "string")
+        ? parsed.brand
+        : null;
+
+    if (
+      !isBudgetValue(parsed.minBudget) ||
+      !isBudgetValue(parsed.maxBudget) ||
+      typeof parsed.vehicleType !== "string" ||
+      brands === null ||
+      typeof parsed.model !== "string"
+    ) {
+      return null;
+    }
+
+    return {
+      minBudget: parsed.minBudget,
+      maxBudget: parsed.maxBudget,
+      vehicleType: parsed.vehicleType,
+      brand: brands,
+      model: parsed.model,
+    };
+  } catch {
+    return null;
+  }
+};
 
 const parseSearchBudgetValue = (value: string) => {
   const normalized = value.replace(/,/g, "").trim().toLowerCase();
@@ -230,6 +282,8 @@ export default function DiscoverPage() {
     cars: mockCars,
   });
   const [isInventoryLoading, setIsInventoryLoading] = useState(true);
+  const [hasCompletedInitialInventoryLoad, setHasCompletedInitialInventoryLoad] =
+    useState(false);
   const [deckKey, setDeckKey] = useState(0);
   const [activeDetailsCar, setActiveDetailsCar] = useState<Car | null>(null);
   const [replacementCandidateCarId, setReplacementCandidateCarId] = useState<
@@ -243,6 +297,7 @@ export default function DiscoverPage() {
   const exploreTabsRef = useRef<HTMLDivElement | null>(null);
   const keepExploringPulseTimeoutRef = useRef<number | null>(null);
   const lastInventoryLoadAuthKeyRef = useRef<string | null>(null);
+  const hasManuallySelectedExploreViewRef = useRef(false);
   const {
     carProgress,
     preferences,
@@ -252,6 +307,19 @@ export default function DiscoverPage() {
     isAuthenticated,
     openUnlockAlertsModal,
   } = useJourney();
+  const [discoverPreferencesHandoff, setDiscoverPreferencesHandoff] =
+    useState<Preferences | null>(null);
+  const [hasReadDiscoverPreferencesHandoff, setHasReadDiscoverPreferencesHandoff] =
+    useState(false);
+
+  useEffect(() => {
+    setDiscoverPreferencesHandoff(readDiscoverPreferencesHandoff());
+    setHasReadDiscoverPreferencesHandoff(true);
+  }, []);
+
+  // When the buyer comes directly from Define, use their just-saved choices
+  // immediately instead of waiting for the shared journey state to catch up.
+  const effectivePreferences = discoverPreferencesHandoff ?? preferences;
   const inventoryCars = inventoryResult.cars;
   const mockCarIds = useMemo(
     () => new Set(mockCars.map((car) => car.id)),
@@ -277,26 +345,22 @@ export default function DiscoverPage() {
     () =>
       getDiscoverableCars(
         inventoryCars,
-        preferences,
+      effectivePreferences,
         inventoryCarProgress,
       ),
-    [inventoryCarProgress, inventoryCars, preferences],
+  [effectivePreferences, inventoryCarProgress, inventoryCars],
   );
   const [matchDeckCars, setMatchDeckCars] = useState(() => discoverCars);
-  const hasDefinePreferences = hasUsablePreferences(preferences);
-  const hasBudgetRange = hasValidBudgetRange(preferences);
-  const selectedBrands = preferences.brand;
-  const selectedVehicleType = preferences.vehicleType.trim();
+  const hasDefinePreferences = hasUsablePreferences(effectivePreferences);
+  const hasBudgetRange = hasValidBudgetRange(effectivePreferences);
+  const selectedBrands = effectivePreferences.brand;
+  const selectedVehicleType = effectivePreferences.vehicleType.trim();
   const hasSpecificVehicleType =
     normalizeValue(selectedVehicleType) !== "" &&
     normalizeValue(selectedVehicleType) !== "all";
-  const normalizedModel = preferences.model.trim();
-  const defaultExploreView: ExploreView = hasBudgetRange
-    ? "budget"
-    : "keep-exploring";
-  const [activeExploreView, setActiveExploreView] = useState<ExploreView>(() =>
-    defaultExploreView,
-  );
+  const normalizedModel = effectivePreferences.model.trim();
+  const [activeExploreView, setActiveExploreView] =
+    useState<ExploreView>("keep-exploring");
 
   const sortByMostRecent = useMemo(
     () => (carsToSort: Car[]) =>
@@ -326,12 +390,12 @@ export default function DiscoverPage() {
             inventoryCars.filter(
               (car) =>
                 isBroadExplorationEligible(car) &&
-                (carMatchesBudgetRange(car, preferences) ||
-                  carMatchesNearBudgetRange(car, preferences)),
+              (carMatchesBudgetRange(car, effectivePreferences) ||
+                carMatchesNearBudgetRange(car, effectivePreferences)),
             ),
           )
         : [],
-    [hasBudgetRange, inventoryCars, preferences, sortByMostRecent],
+  [hasBudgetRange, inventoryCars, effectivePreferences, sortByMostRecent],
   );
   const secondChanceCars = useMemo(
     () =>
@@ -355,10 +419,10 @@ export default function DiscoverPage() {
         inventoryCars.filter(
           (car) =>
             isPrimaryDiscoveryEligible(car) &&
-            carMatchesPreferences(car, preferences),
+          carMatchesPreferences(car, effectivePreferences),
         ),
       ),
-    [inventoryCars, preferences, sortByMostRecent],
+  [inventoryCars, effectivePreferences, sortByMostRecent],
   );
   const exploreExclusionIds = useMemo(() => {
     const excludedIds = new Set(discoverCars.map((car) => car.id));
@@ -372,10 +436,40 @@ export default function DiscoverPage() {
     return excludedIds;
   }, [inventoryCarProgress, discoverCars]);
 
-  const currentExploreView =
-    activeExploreView === "budget" && !hasBudgetRange
-      ? defaultExploreView
-      : activeExploreView;
+  const initialExploreViewCounts = useMemo(
+    () => [
+      ...(hasBudgetRange
+        ? [
+            {
+              view: "budget" as const,
+              count: budgetCars.filter((car) => !exploreExclusionIds.has(car.id))
+                .length,
+            },
+          ]
+        : []),
+      {
+        view: "keep-exploring" as const,
+        count: keepExploringCars.filter(
+          (car) => !exploreExclusionIds.has(car.id),
+        ).length,
+      },
+      { view: "second-chances" as const, count: secondChanceCars.length },
+      { view: "all" as const, count: allCars.length },
+    ],
+    [
+      allCars,
+      budgetCars,
+      exploreExclusionIds,
+      hasBudgetRange,
+      keepExploringCars,
+      secondChanceCars,
+    ],
+  );
+
+const currentExploreView =
+  activeExploreView === "budget" && !hasBudgetRange
+    ? "keep-exploring"
+    : activeExploreView;
 
   const rawExploreCars =
     currentExploreView === "budget"
@@ -398,8 +492,8 @@ export default function DiscoverPage() {
     ...(hasBudgetRange
       ? [
           `Range ${formatBudgetRange(
-            preferences.minBudget,
-            preferences.maxBudget,
+          effectivePreferences.minBudget,
+          effectivePreferences.maxBudget,
           )}`,
         ]
       : []),
@@ -462,7 +556,13 @@ export default function DiscoverPage() {
     window.sessionStorage.setItem("revmatched.define-attention", "true");
     router.push("/find-the-one");
   };
+  const handleExploreViewChange = useCallback((view: ExploreView) => {
+    hasManuallySelectedExploreViewRef.current = true;
+    setActiveExploreView(view);
+  }, []);
+
   const handleKeepExploringShortcut = useCallback(() => {
+    hasManuallySelectedExploreViewRef.current = true;
     setActiveExploreView("keep-exploring");
     setShouldPulseKeepExploringTab(true);
 
@@ -491,11 +591,16 @@ export default function DiscoverPage() {
       authKey: string,
       options: { force?: boolean } = {},
     ) => {
-      if (!options.force && lastInventoryLoadAuthKeyRef.current === authKey) {
-        return;
-      }
+    if (!options.force && lastInventoryLoadAuthKeyRef.current === authKey) {
+      return;
+    }
 
-      lastInventoryLoadAuthKeyRef.current = authKey;
+    if (options.force) {
+      hasManuallySelectedExploreViewRef.current = false;
+      setHasCompletedInitialInventoryLoad(false);
+    }
+
+    lastInventoryLoadAuthKeyRef.current = authKey;
       setIsInventoryLoading(true);
 
       try {
@@ -520,9 +625,10 @@ export default function DiscoverPage() {
               : "Unable to load Supabase inventory.",
         });
       } finally {
-        if (!isCancelled) {
-          setIsInventoryLoading(false);
-        }
+      if (!isCancelled) {
+        setHasCompletedInitialInventoryLoad(true);
+        setIsInventoryLoading(false);
+      }
       }
     };
 
@@ -560,6 +666,46 @@ export default function DiscoverPage() {
       subscription.unsubscribe();
     };
   }, []);
+
+useEffect(() => {
+  if (
+    isInventoryLoading ||
+    !hasCompletedInitialInventoryLoad ||
+    !hasReadDiscoverPreferencesHandoff ||
+    hasManuallySelectedExploreViewRef.current
+  ) {
+    return;
+  }
+
+  const firstAvailableView = initialExploreViewCounts.find(
+    ({ count }) => count > 0,
+  );
+
+  if (
+    firstAvailableView &&
+    currentExploreView !== firstAvailableView.view
+  ) {
+    setActiveExploreView(firstAvailableView.view);
+  }
+  }, [
+    currentExploreView,
+    hasCompletedInitialInventoryLoad,
+    hasReadDiscoverPreferencesHandoff,
+    initialExploreViewCounts,
+    isInventoryLoading,
+  ]);
+
+useEffect(() => {
+  if (!discoverPreferencesHandoff || !hasReadDiscoverPreferencesHandoff) {
+      return;
+    }
+
+    try {
+      window.sessionStorage.removeItem(DISCOVER_PREFERENCES_HANDOFF_KEY);
+    } catch {
+      // The in-memory handoff has already completed.
+    }
+}, [discoverPreferencesHandoff, hasReadDiscoverPreferencesHandoff]);
 
   useEffect(() => {
     setMatchDeckCars(discoverCars);
@@ -692,9 +838,9 @@ export default function DiscoverPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-5 py-4 sm:px-8 lg:px-12 lg:py-5">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-5 py-3 sm:px-7 lg:px-10 lg:py-4">
         <section className="page-panel motion-rise-fade motion-delay-0 space-y-2.5 rounded-[28px] border border-input bg-panel p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-5">
-          {isInventoryLoading ? (
+          {isInventoryLoading && !hasCompletedInitialInventoryLoad ? (
             <p className="text-xs font-medium text-slate-500">
               Loading inventory...
             </p>
@@ -732,8 +878,8 @@ export default function DiscoverPage() {
                 }}
                 className={reviewLikedButtonClassName}
               >
-                <ThumbsUp size={18} strokeWidth={0} className="fill-current" />
                 Review Liked
+                <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
               </Link>
             </div>
           ) : finishedTodaysLineup ? (
@@ -786,8 +932,8 @@ export default function DiscoverPage() {
                     }}
                     className={reviewLikedButtonClassName}
                   >
-                    <ThumbsUp size={18} strokeWidth={0} className="fill-current" />
                     Review Liked
+                    <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
                   </Link>
                   <button
                     type="button"
@@ -798,40 +944,81 @@ export default function DiscoverPage() {
                   </button>
                   <Link
                     href="/find-the-one"
-                    className="inline-flex justify-center rounded-full px-5 py-2 text-sm font-semibold text-slate-400 transition hover:text-white"
+                    className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-slate-400 transition hover:text-white"
                   >
+                    <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
                     Refine Preferences
                   </Link>
                 </div>
               </div>
             </div>
           ) : hasNoMatches ? (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
-                No matches right now
-                <span className="block text-sm text-slate-400">
-                  Try widening your budget, vehicle type, or brands.
-                </span>
-              </p>
-              <Link
-                href="/like"
-                className="app-button inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
-              >
-                <ThumbsUp size={18} strokeWidth={0} className="fill-current" />
-                Review Liked
-              </Link>
+          <div className="grid items-center gap-8 rounded-[24px] border border-dashed border-input bg-slate-950/30 px-6 py-10 text-center sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.8fr)] lg:gap-10 lg:text-left">
+            <div className="mx-auto max-w-2xl lg:mx-0">
+              <div className="grid h-20 w-20 place-items-center rounded-full border border-input bg-panel text-white lg:mx-0">
+                <Search size={36} strokeWidth={2.1} aria-hidden="true" />
+              </div>
+              <h2 className="mt-5 text-2xl font-semibold text-white">No new matches right now</h2>
+      <p className="mt-2 text-base leading-relaxed text-slate-300 md:text-lg">
+        Try widening your budget, vehicle type, or brands.
+      </p>
+      {hasLikedCars ? (
+        <div className="mx-auto mt-6 flex w-fit flex-col gap-3 sm:flex-row lg:mx-0">
+          <Link
+            href="/like"
+            className="app-button inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
+          >
+            Review Liked
+            <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
+          </Link>
+          <Link
+            href="/find-the-one"
+            className="app-button inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm font-medium text-slate-100 transition hover:border-white/25 hover:bg-white/10"
+          >
+            <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
+            Go to Define
+          </Link>
+        </div>
+      ) : (
+        <Link
+          href="/find-the-one"
+          className="app-button mx-auto mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90 lg:mx-0"
+        >
+          <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
+          Go to Define
+        </Link>
+      )}
             </div>
+
+            <div aria-hidden="true" className="relative mx-auto h-[13.5rem] w-full max-w-[24rem] sm:h-[15rem] lg:mx-0">
+              <div className="absolute left-1 top-8 h-[10.75rem] w-[43%] -rotate-[5deg] rounded-[20px] border border-white/10 bg-[#0a1b21] shadow-[0_16px_28px_rgba(0,0,0,0.2)] sm:h-[12rem]" />
+              <div className="absolute right-1 top-8 h-[10.75rem] w-[43%] rotate-[5deg] rounded-[20px] border border-white/10 bg-[#0a1b21] shadow-[0_16px_28px_rgba(0,0,0,0.2)] sm:h-[12rem]" />
+              <div className="absolute left-1/2 top-0 flex h-[12.5rem] w-[52%] -translate-x-1/2 flex-col overflow-hidden rounded-[22px] border border-white/15 bg-[#0d2229] shadow-[0_20px_34px_rgba(0,0,0,0.3)] sm:h-[14rem]">
+                <div className="flex h-[48%] items-center justify-center bg-[radial-gradient(circle_at_50%_5%,rgba(226,15,65,0.3),transparent_58%),linear-gradient(135deg,#102a31,#07191e)]">
+                  <Search size={38} strokeWidth={2.1} className="text-white" />
+                </div>
+                <div className="flex flex-1 flex-col justify-center gap-2.5 p-4">
+                  <div className="h-2.5 w-4/5 rounded-full bg-white/20" />
+                  <div className="h-2.5 w-3/5 rounded-full bg-white/10" />
+                  <div className="mt-1 flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                    <Search size={13} strokeWidth={2.1} />
+                    Discover
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           ) : (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
-                No matches right now — try widening your range or explore below.
+                No new matches right now — try widening your range or explore below.
               </p>
               <Link
                 href="/like"
                 className="app-button inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
               >
-                <ThumbsUp size={18} strokeWidth={0} className="fill-current" />
                 Review Liked
+                <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
               </Link>
             </div>
           )}
@@ -840,7 +1027,7 @@ export default function DiscoverPage() {
         <section
           id="explore-more"
           ref={exploreSectionRef}
-          className="scroll-mt-32 page-panel motion-rise-fade motion-delay-2 rounded-[28px] border border-input bg-panel p-5 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-6"
+          className="scroll-mt-32 page-panel motion-rise-fade motion-delay-2 rounded-[26px] border border-input bg-panel p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-5"
         >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="max-w-3xl">
@@ -946,7 +1133,7 @@ export default function DiscoverPage() {
               {hasBudgetRange ? (
                 <button
                   type="button"
-                  onClick={() => setActiveExploreView("budget")}
+              onClick={() => handleExploreViewChange("budget")}
                   data-active-tab={currentExploreView === "budget"}
                   className={`nav-pill inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-sm transition ${
                     currentExploreView === "budget"
@@ -960,7 +1147,7 @@ export default function DiscoverPage() {
               ) : null}
               <button
                 type="button"
-                onClick={() => setActiveExploreView("keep-exploring")}
+            onClick={() => handleExploreViewChange("keep-exploring")}
                 data-active-tab={currentExploreView === "keep-exploring"}
                 className={`nav-pill inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-sm transition ${
                   currentExploreView === "keep-exploring"
@@ -978,7 +1165,7 @@ export default function DiscoverPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveExploreView("second-chances")}
+            onClick={() => handleExploreViewChange("second-chances")}
                 data-active-tab={currentExploreView === "second-chances"}
                 className={`nav-pill inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-sm transition ${
                   currentExploreView === "second-chances"
@@ -991,7 +1178,7 @@ export default function DiscoverPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveExploreView("all")}
+            onClick={() => handleExploreViewChange("all")}
                 data-active-tab={currentExploreView === "all"}
                 className={`nav-pill inline-flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-sm transition ${
                   currentExploreView === "all"
@@ -1038,7 +1225,7 @@ export default function DiscoverPage() {
           </div>
 
           <div className="mt-4">
-            <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
               {exploreCars.map((car, index) => {
                 const carState = inventoryCarProgress[car.id]?.state;
                 const cardStatus =
@@ -1089,17 +1276,20 @@ export default function DiscoverPage() {
             </div>
 
             {!exploreCars.length ? (
-              <div className="rounded-[24px] border border-dashed border-input bg-input/60 p-5">
+              <div className="rounded-[32px] border border-dashed border-input bg-input/60 px-6 py-12 text-center shadow-[0_16px_40px_rgba(0,0,0,0.2)] sm:px-10 sm:py-14">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-slate-100 shadow-lg">
+                  <Search className="h-8 w-8" aria-hidden="true" />
+                </div>
                 {currentExploreView === "all" && allExploreSearchQuery.trim() ? (
-                  <p className="text-sm font-semibold text-slate-300">
+                  <p className="mt-5 text-xl font-semibold text-white sm:text-2xl">
                     No cars match that search. Try another brand, model, type, or budget.
                   </p>
                 ) : (
                   <>
-                    <p className="text-sm font-semibold text-slate-300">
+                    <p className="mt-5 text-xl font-semibold text-white sm:text-2xl">
                       No more cars here right now.
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-3 text-base leading-relaxed text-slate-300">
                       Try another angle.
                     </p>
                   </>

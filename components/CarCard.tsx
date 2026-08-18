@@ -6,7 +6,10 @@ type CarCardProps = {
   name: string;
   price: string;
   category: string;
+  facts?: string[];
   image: string;
+  imageIsPlaceholder?: boolean;
+  isNegotiable?: boolean;
   imageBadge?: ReactNode;
   indicator?: ReactNode;
   footer?: ReactNode;
@@ -20,7 +23,10 @@ export function CarCard({
   name,
   price,
   category,
+  facts = [],
   image,
+  imageIsPlaceholder = false,
+  isNegotiable = false,
   imageBadge,
   indicator,
   footer,
@@ -65,7 +71,7 @@ export function CarCard({
     <article
       data-card-root="true"
       data-card-status={status ?? "default"}
-      className={`group interactive-card-hover interactive-panel page-panel relative flex h-full flex-col overflow-hidden rounded-[28px] transition duration-300 ${
+      className={`group interactive-card-hover interactive-panel page-panel relative flex h-full flex-col overflow-hidden rounded-[26px] transition duration-300 ${
         isLight
           ? "border border-transparent bg-[#F7F7F8] shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
           : "border border-transparent bg-panel shadow-[0_18px_40px_rgba(0,0,0,0.28)]"
@@ -82,7 +88,7 @@ export function CarCard({
           fill
           sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw"
           draggable={false}
-          className="card-hover-image interactive-card-image pointer-events-none block object-cover transition duration-500"
+          className="card-hover-image interactive-card-image pointer-events-none block object-cover object-center transition duration-500"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
         {imageBadge || statusConfig ? (
@@ -102,9 +108,14 @@ export function CarCard({
             ) : null}
           </div>
         ) : null}
+        {imageIsPlaceholder ? (
+          <span className="absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] rounded-full border border-amber-200/30 bg-black/75 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-amber-100 backdrop-blur-sm">
+            AI illustration — not the actual vehicle
+          </span>
+        ) : null}
       </div>
 
-      <div className={`flex flex-1 flex-col gap-2 ${isLight ? "p-5" : "p-5"}`}>
+      <div className={`flex flex-1 flex-col gap-1.5 ${isLight ? "p-[1.125rem]" : "p-[1.125rem]"}`}>
         <div className="flex items-center justify-between gap-4">
           <span
             className={`inline-flex min-w-0 max-w-[58%] items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold backdrop-blur-sm transition hover:bg-white/10 ${
@@ -115,13 +126,20 @@ export function CarCard({
           >
             <span className="truncate">{category}</span>
           </span>
-          <p
-            className={`shrink-0 text-xl font-semibold tracking-tight sm:text-2xl ${
-              isLight ? "text-[#16212B]" : "text-white"
-            }`}
-          >
-            {price}
-          </p>
+          <div className="shrink-0 text-right">
+            <p
+              className={`text-xl font-semibold tracking-tight sm:text-2xl ${
+                isLight ? "text-[#16212B]" : "text-white"
+              }`}
+            >
+              {price}
+            </p>
+            {isNegotiable ? (
+              <span className="mt-1 inline-flex rounded-full border border-amber-300/40 bg-amber-300/10 px-2 py-0.5 text-xs font-semibold text-amber-100">
+                Negotiable
+              </span>
+            ) : null}
+          </div>
         </div>
 
         <div className="min-h-7">
@@ -133,6 +151,12 @@ export function CarCard({
             {name}
           </h3>
         </div>
+
+        {facts.length > 0 ? (
+          <p className={`text-sm leading-6 ${isLight ? "text-[#52657A]" : "text-slate-300"}`}>
+            {facts.join(" · ")}
+          </p>
+        ) : null}
 
         <div className={indicator ? "min-h-6" : "min-h-1"}>
           {indicator}

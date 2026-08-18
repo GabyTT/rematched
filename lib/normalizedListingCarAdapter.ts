@@ -1,11 +1,19 @@
-import type { Car } from "@/lib/cars";
-import type { Tables } from "@/lib/database.types";
+import type { Car } from "./cars.ts";
+import type { Tables } from "./database.types.ts";
+import type { BuyerVisibleNormalizedListing } from "./normalizedListings.ts";
 
-type NormalizedListing = Tables<"normalized_listings">;
+type NormalizedListing = BuyerVisibleNormalizedListing;
 type NormalizedListingImage = Tables<"normalized_listing_images">;
+type BuyerListingImage = Pick<
+  NormalizedListingImage,
+  | "normalized_listing_id"
+  | "preview_allowed"
+  | "display_url"
+  | "is_primary"
+  | "display_order"
+>;
 
-const FALLBACK_CAR_IMAGE =
-  "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=1200&q=80";
+const FALLBACK_CAR_IMAGE = "/ai-car-placeholder.png";
 
 function formatCurrencyTtd(value: number | null) {
   if (value === null) {
@@ -34,6 +42,10 @@ function formatLabel(value: string | null, fallback: string) {
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function cleanOptionalLabel(value: string | null) {
+  return value?.trim() ?? "";
 }
 
 function normalizeVehicleType(bodyType: string | null) {
@@ -66,9 +78,9 @@ function normalizeVehicleType(bodyType: string | null) {
   return normalizedBodyType;
 }
 
-function chooseListingImage(
+function getApprovedListingImages(
   listing: NormalizedListing,
-  images: NormalizedListingImage[],
+  images: BuyerListingImage[],
 ) {
   return images
     .filter(
@@ -83,16 +95,45 @@ function chooseListingImage(
       }
 
       return left.display_order - right.display_order;
-    })[0]?.display_url ?? FALLBACK_CAR_IMAGE;
+    })
+    .map((image) => image.display_url)
+    .filter((imageUrl, index, imageUrls) => imageUrls.indexOf(imageUrl) === index);
+}
+
+function chooseListingImage(
+  listing: NormalizedListing,
+  images: BuyerListingImage[],
+) {
+  const approvedImages = getApprovedListingImages(listing, images);
+  const authorizedImage = approvedImages[0];
+
+  return authorizedImage
+    ? { image: authorizedImage, images: approvedImages, imageIsPlaceholder: false }
+    : { image: FALLBACK_CAR_IMAGE, images: [], imageIsPlaceholder: true };
 }
 
 export function mapNormalizedListingToCar(
   listing: NormalizedListing,
-  images: NormalizedListingImage[] = [],
+  images: BuyerListingImage[] = [],
 ): Car {
   const brand = listing.brand_name?.trim() || "Unknown make";
   const model = listing.model_name?.trim() || "Unknown model";
   const vehicleType = normalizeVehicleType(listing.body_type);
+  const listingImage = chooseListingImage(listing, images);
+  const plateSeries = cleanOptionalLabel(listing.plate_series);
+  const colour = cleanOptionalLabel(listing.colour);
+  const engineSize = cleanOptionalLabel(listing.engine_size);
+  const transmission = formatLabel(
+    listing.transmission_type,
+    "Transmission not listed",
+  );
+  const facts = [
+    plateSeries ? `Series ${plateSeries}` : null,
+    colour,
+    engineSize,
+    listing.mileage_value === null ? null : formatMileage(listing.mileage_value),
+    listing.transmission_type?.trim() ? transmission : null,
+  ].filter((fact): fact is string => Boolean(fact));
 
   return {
     id: listing.id,
@@ -103,23 +144,28 @@ export function mapNormalizedListingToCar(
     priceValue: listing.price_amount ?? 0,
     mileage: formatMileage(listing.mileage_value),
     fuel: formatLabel(listing.fuel_type, "Fuel not listed"),
-    transmission: formatLabel(
-      listing.transmission_type,
-      "Transmission not listed",
-    ),
+    transmission,
     location: listing.location_label?.trim() || "Location not listed",
     category: formatLabel(listing.body_type, "Available listing"),
     vehicleType,
     brand,
     model,
-    image: chooseListingImage(listing, images),
-    ingestionListingId: listing.raw_listing_id ?? listing.id,
+    plateSeries,
+    colour,
+    engineSize,
+    isNegotiable: listing.is_negotiable,
+    facts,
+    image: listingImage.image,
+    images: listingImage.images,
+    imageIsPlaceholder: listingImage.imageIsPlaceholder,
+    sellerContactName: listing.public_contact_name,
+    sellerContactPhone: listing.public_contact_phone,
   };
 }
 
 export function mapNormalizedListingsToCars(
   listings: NormalizedListing[],
-  images: NormalizedListingImage[] = [],
+  images: BuyerListingImage[] = [],
 ) {
   return listings.map((listing) => mapNormalizedListingToCar(listing, images));
 }

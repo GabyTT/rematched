@@ -19,7 +19,11 @@ export type Database = {
           listings_fetched: number
           listings_normalized: number
           parser_errors: number
+          manual_import_type: string | null
           run_notes: string | null
+          source_listing_date: string | null
+          source_listing_ids: Json
+          source_listings_found: number | null
           started_at: string
           status: string
           updated_at: string
@@ -33,7 +37,11 @@ export type Database = {
           listings_fetched?: number
           listings_normalized?: number
           parser_errors?: number
+          manual_import_type?: string | null
           run_notes?: string | null
+          source_listing_date?: string | null
+          source_listing_ids?: Json
+          source_listings_found?: number | null
           started_at?: string
           status?: string
           updated_at?: string
@@ -47,7 +55,11 @@ export type Database = {
           listings_fetched?: number
           listings_normalized?: number
           parser_errors?: number
+          manual_import_type?: string | null
           run_notes?: string | null
+          source_listing_date?: string | null
+          source_listing_ids?: Json
+          source_listings_found?: number | null
           started_at?: string
           status?: string
           updated_at?: string
@@ -68,7 +80,9 @@ export type Database = {
           created_at: string
           id: string
           ingestion_enabled: boolean
+          ingestion_mode: string
           notes: string | null
+          scheduled_run_time: string
           source_name: string
           source_type: string
           updated_at: string
@@ -78,7 +92,9 @@ export type Database = {
           created_at?: string
           id?: string
           ingestion_enabled?: boolean
+          ingestion_mode?: string
           notes?: string | null
+          scheduled_run_time?: string
           source_name: string
           source_type: string
           updated_at?: string
@@ -88,7 +104,9 @@ export type Database = {
           created_at?: string
           id?: string
           ingestion_enabled?: boolean
+          ingestion_mode?: string
           notes?: string | null
+          scheduled_run_time?: string
           source_name?: string
           source_type?: string
           updated_at?: string
@@ -149,6 +167,63 @@ export type Database = {
           },
         ]
       }
+      listing_workflow_events: {
+        Row: {
+          contact_method: string | null
+          colour: string | null
+          created_at: string
+          expected_assets_at: string | null
+          event_type: string
+          follow_up_at: string | null
+          follow_up_overridden: boolean
+          id: string
+          next_workflow_status: string
+          normalized_listing_id: string
+          notes: string | null
+          occurred_at: string
+          previous_workflow_status: string | null
+          seller_contact_outcome: string | null
+        }
+        Insert: {
+          contact_method?: string | null
+          created_at?: string
+          expected_assets_at?: string | null
+          event_type: string
+          follow_up_at?: string | null
+          follow_up_overridden?: boolean
+          id?: string
+          next_workflow_status: string
+          normalized_listing_id: string
+          notes?: string | null
+          occurred_at?: string
+          previous_workflow_status?: string | null
+          seller_contact_outcome?: string | null
+        }
+        Update: {
+          contact_method?: string | null
+          created_at?: string
+          expected_assets_at?: string | null
+          event_type?: string
+          follow_up_at?: string | null
+          follow_up_overridden?: boolean
+          id?: string
+          next_workflow_status?: string
+          normalized_listing_id?: string
+          notes?: string | null
+          occurred_at?: string
+          previous_workflow_status?: string | null
+          seller_contact_outcome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_workflow_events_normalized_listing_id_fkey"
+            columns: ["normalized_listing_id"]
+            isOneToOne: false
+            referencedRelation: "normalized_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       normalized_listings: {
         Row: {
           availability_status: string
@@ -156,18 +231,24 @@ export type Database = {
           brand_name: string | null
           buyer_visibility_reason: string | null
           contact_method: string | null
+          colour: string | null
           created_at: string
           display_name: string
+          engine_size: string | null
           fuel_type: string | null
           id: string
           import_status: string | null
+          is_negotiable: boolean
           is_buyer_visible: boolean
           listing_source_id: string | null
           location_label: string | null
           mileage_value: number | null
           model_name: string | null
           normalization_confidence: number | null
+          plate_series: string | null
           price_amount: number | null
+          public_contact_name: string | null
+          public_contact_phone: string | null
           raw_listing_id: string | null
           recommendation_state: string
           review_status: string
@@ -176,10 +257,13 @@ export type Database = {
           source_images_allowed_for_preview: boolean
           source_listing_id: string | null
           source_listing_url: string | null
+          source_missing_at: string | null
+          source_missing_run_id: string | null
           title: string | null
           transmission_type: string | null
           trim_name: string | null
           updated_at: string
+          workflow_status: string
           year: number | null
         }
         Insert: {
@@ -188,18 +272,24 @@ export type Database = {
           brand_name?: string | null
           buyer_visibility_reason?: string | null
           contact_method?: string | null
+          colour?: string | null
           created_at?: string
           display_name: string
+          engine_size?: string | null
           fuel_type?: string | null
           id?: string
           import_status?: string | null
+          is_negotiable?: boolean
           is_buyer_visible?: boolean
           listing_source_id?: string | null
           location_label?: string | null
           mileage_value?: number | null
           model_name?: string | null
           normalization_confidence?: number | null
+          plate_series?: string | null
           price_amount?: number | null
+          public_contact_name?: string | null
+          public_contact_phone?: string | null
           raw_listing_id?: string | null
           recommendation_state?: string
           review_status?: string
@@ -208,10 +298,13 @@ export type Database = {
           source_images_allowed_for_preview?: boolean
           source_listing_id?: string | null
           source_listing_url?: string | null
+          source_missing_at?: string | null
+          source_missing_run_id?: string | null
           title?: string | null
           transmission_type?: string | null
           trim_name?: string | null
           updated_at?: string
+          workflow_status?: string
           year?: number | null
         }
         Update: {
@@ -220,18 +313,24 @@ export type Database = {
           brand_name?: string | null
           buyer_visibility_reason?: string | null
           contact_method?: string | null
+          colour?: string | null
           created_at?: string
           display_name?: string
+          engine_size?: string | null
           fuel_type?: string | null
           id?: string
           import_status?: string | null
+          is_negotiable?: boolean
           is_buyer_visible?: boolean
           listing_source_id?: string | null
           location_label?: string | null
           mileage_value?: number | null
           model_name?: string | null
           normalization_confidence?: number | null
+          plate_series?: string | null
           price_amount?: number | null
+          public_contact_name?: string | null
+          public_contact_phone?: string | null
           raw_listing_id?: string | null
           recommendation_state?: string
           review_status?: string
@@ -240,10 +339,13 @@ export type Database = {
           source_images_allowed_for_preview?: boolean
           source_listing_id?: string | null
           source_listing_url?: string | null
+          source_missing_at?: string | null
+          source_missing_run_id?: string | null
           title?: string | null
           transmission_type?: string | null
           trim_name?: string | null
           updated_at?: string
+          workflow_status?: string
           year?: number | null
         }
         Relationships: [
@@ -375,6 +477,296 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_access_codes: {
+        Row: {
+          code_hash: string
+          created_at: string
+          expires_at: string
+          id: string
+          issued_at: string
+          seller_account_id: string
+          updated_at: string
+        }
+        Insert: {
+          code_hash: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          issued_at?: string
+          seller_account_id: string
+          updated_at?: string
+        }
+        Update: {
+          code_hash?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          issued_at?: string
+          seller_account_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_access_codes_seller_account_id_fkey"
+            columns: ["seller_account_id"]
+            isOneToOne: true
+            referencedRelation: "seller_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_accounts: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          phone_e164: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone_e164: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone_e164?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      seller_listing_submissions: {
+        Row: {
+          additional_info: string | null
+          admin_review_note: string | null
+          admin_review_status: string
+          admin_reviewed_at: string | null
+          body_type: string | null
+          brand_name: string | null
+          colour: string | null
+          confirmation_accepted_at: string | null
+          created_at: string
+          display_name: string
+          engine_size: string | null
+          features: string
+          fuel_type: string | null
+          id: string
+          location_label: string | null
+          mileage_value: number | null
+          model_name: string | null
+          normalized_listing_id: string
+          pending_review_at: string | null
+          is_negotiable: boolean
+          plate_series: string | null
+          price_amount: number | null
+          publication_consent_accepted_at: string | null
+          public_contact_name: string | null
+          public_contact_phone: string | null
+          seller_account_id: string
+          status: string
+          submitted_at: string | null
+          transmission_type: string | null
+          trim_name: string | null
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          additional_info?: string | null
+          admin_review_note?: string | null
+          admin_review_status?: string
+          admin_reviewed_at?: string | null
+          body_type?: string | null
+          brand_name?: string | null
+          colour?: string | null
+          confirmation_accepted_at?: string | null
+          created_at?: string
+          display_name: string
+          engine_size?: string | null
+          features?: string
+          fuel_type?: string | null
+          id?: string
+          location_label?: string | null
+          mileage_value?: number | null
+          model_name?: string | null
+          normalized_listing_id: string
+          pending_review_at?: string | null
+          is_negotiable?: boolean
+          plate_series?: string | null
+          price_amount?: number | null
+          publication_consent_accepted_at?: string | null
+          public_contact_name?: string | null
+          public_contact_phone?: string | null
+          seller_account_id: string
+          status?: string
+          submitted_at?: string | null
+          transmission_type?: string | null
+          trim_name?: string | null
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          additional_info?: string | null
+          admin_review_note?: string | null
+          admin_review_status?: string
+          admin_reviewed_at?: string | null
+          body_type?: string | null
+          brand_name?: string | null
+          colour?: string | null
+          confirmation_accepted_at?: string | null
+          created_at?: string
+          display_name?: string
+          engine_size?: string | null
+          features?: string
+          fuel_type?: string | null
+          id?: string
+          location_label?: string | null
+          mileage_value?: number | null
+          model_name?: string | null
+          normalized_listing_id?: string
+          pending_review_at?: string | null
+          is_negotiable?: boolean
+          plate_series?: string | null
+          price_amount?: number | null
+          publication_consent_accepted_at?: string | null
+          public_contact_name?: string | null
+          public_contact_phone?: string | null
+          seller_account_id?: string
+          status?: string
+          submitted_at?: string | null
+          transmission_type?: string | null
+          trim_name?: string | null
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_listing_submissions_normalized_listing_id_fkey"
+            columns: ["normalized_listing_id"]
+            isOneToOne: true
+            referencedRelation: "normalized_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_listing_submissions_seller_account_id_fkey"
+            columns: ["seller_account_id"]
+            isOneToOne: false
+            referencedRelation: "seller_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_listing_media_assets: {
+        Row: {
+          approval_status: string
+          content_type: string
+          created_at: string
+          file_size_bytes: number
+          id: string
+          is_preferred_main: boolean
+          normalized_listing_id: string
+          original_filename: string
+          requested_action: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          seller_account_id: string
+          storage_path: string
+          updated_at: string
+          uploaded_at: string
+        }
+        Insert: {
+          approval_status?: string
+          content_type: string
+          created_at?: string
+          file_size_bytes: number
+          id?: string
+          is_preferred_main?: boolean
+          normalized_listing_id: string
+          original_filename: string
+          requested_action?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          seller_account_id: string
+          storage_path: string
+          updated_at?: string
+          uploaded_at?: string
+        }
+        Update: {
+          approval_status?: string
+          content_type?: string
+          created_at?: string
+          file_size_bytes?: number
+          id?: string
+          is_preferred_main?: boolean
+          normalized_listing_id?: string
+          original_filename?: string
+          requested_action?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          seller_account_id?: string
+          storage_path?: string
+          updated_at?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_listing_media_assets_normalized_listing_id_fkey"
+            columns: ["normalized_listing_id"]
+            isOneToOne: false
+            referencedRelation: "normalized_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_listing_media_assets_seller_account_id_fkey"
+            columns: ["seller_account_id"]
+            isOneToOne: false
+            referencedRelation: "seller_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_listing_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          normalized_listing_id: string
+          seller_account_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          normalized_listing_id: string
+          seller_account_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          normalized_listing_id?: string
+          seller_account_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_listing_assignments_normalized_listing_id_fkey"
+            columns: ["normalized_listing_id"]
+            isOneToOne: false
+            referencedRelation: "normalized_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_listing_assignments_seller_account_id_fkey"
+            columns: ["seller_account_id"]
+            isOneToOne: false
+            referencedRelation: "seller_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       raw_listing_images: {
         Row: {
           created_at: string
@@ -424,16 +816,25 @@ export type Database = {
           ingestion_run_id: string | null
           listing_source_id: string
           raw_contact_text: string | null
+          raw_colour_text: string | null
           raw_description: string | null
+          raw_engine_size_text: string | null
           raw_fuel_text: string | null
+          raw_features_text: string | null
+          raw_is_negotiable: boolean
           raw_location_text: string | null
           raw_mileage_text: string | null
           raw_payload: Json
           raw_price_text: string | null
+          raw_plate_series_text: string | null
           raw_seller_label: string | null
           raw_title: string | null
           raw_transmission_text: string | null
           raw_trim_text: string | null
+          source_posted_at: string | null
+          source_posted_text: string | null
+          source_refreshed_at: string | null
+          source_refreshed_text: string | null
           source_listing_id: string | null
           source_listing_url: string | null
           updated_at: string
@@ -445,16 +846,25 @@ export type Database = {
           ingestion_run_id?: string | null
           listing_source_id: string
           raw_contact_text?: string | null
+          raw_colour_text?: string | null
           raw_description?: string | null
+          raw_engine_size_text?: string | null
           raw_fuel_text?: string | null
+          raw_features_text?: string | null
+          raw_is_negotiable?: boolean
           raw_location_text?: string | null
           raw_mileage_text?: string | null
           raw_payload?: Json
           raw_price_text?: string | null
+          raw_plate_series_text?: string | null
           raw_seller_label?: string | null
           raw_title?: string | null
           raw_transmission_text?: string | null
           raw_trim_text?: string | null
+          source_posted_at?: string | null
+          source_posted_text?: string | null
+          source_refreshed_at?: string | null
+          source_refreshed_text?: string | null
           source_listing_id?: string | null
           source_listing_url?: string | null
           updated_at?: string
@@ -466,16 +876,25 @@ export type Database = {
           ingestion_run_id?: string | null
           listing_source_id?: string
           raw_contact_text?: string | null
+          raw_colour_text?: string | null
           raw_description?: string | null
+          raw_engine_size_text?: string | null
           raw_fuel_text?: string | null
+          raw_features_text?: string | null
+          raw_is_negotiable?: boolean
           raw_location_text?: string | null
           raw_mileage_text?: string | null
           raw_payload?: Json
           raw_price_text?: string | null
+          raw_plate_series_text?: string | null
           raw_seller_label?: string | null
           raw_title?: string | null
           raw_transmission_text?: string | null
           raw_trim_text?: string | null
+          source_posted_at?: string | null
+          source_posted_text?: string | null
+          source_refreshed_at?: string | null
+          source_refreshed_text?: string | null
           source_listing_id?: string | null
           source_listing_url?: string | null
           updated_at?: string
@@ -499,7 +918,29 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      buyer_visible_listings: {
+        Row: {
+          body_type: string | null
+          brand_name: string | null
+          colour: string | null
+          display_name: string
+          engine_size: string | null
+          fuel_type: string | null
+          id: string
+          is_negotiable: boolean
+          location_label: string | null
+          mileage_value: number | null
+          model_name: string | null
+          price_amount: number | null
+          plate_series: string | null
+          public_contact_name: string | null
+          public_contact_phone: string | null
+          raw_listing_id: string | null
+          transmission_type: string | null
+          year: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
@@ -635,4 +1076,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

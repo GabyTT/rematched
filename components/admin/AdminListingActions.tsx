@@ -79,7 +79,7 @@ export function AdminListingActions({ listingId }: AdminListingActionsProps) {
         />
       </div>
 
-      <p className="mt-4 text-sm leading-7 text-slate-300">
+      <p className="mt-4 text-base leading-7 text-slate-300">
         These actions currently update shared mock admin state across the
         dashboard, listings, and review queue. They let us shape the workflow
         before persistence and real review tooling are connected.
@@ -151,7 +151,7 @@ export function AdminListingActions({ listingId }: AdminListingActionsProps) {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-white/8 bg-black/10 px-4 py-3">
-        <p className="text-sm text-slate-300">
+        <p className="text-base text-slate-300">
           <span className="font-semibold text-white">Latest mock action:</span>{" "}
           {lastAction}
         </p>

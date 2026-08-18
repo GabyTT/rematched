@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
-import { Eye, FileText, X } from "lucide-react";
+import { Eye, FileText, Heart } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import type { Car } from "@/lib/cars";
 
@@ -45,23 +48,35 @@ export function CompareTable({
   maxCars = 3,
 }: CompareTableProps) {
   const slots = Array.from({ length: maxCars }, (_, index) => cars[index] ?? null);
+  const [carToUnpick, setCarToUnpick] = useState<CompareCar | null>(null);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setCarToUnpick(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, []);
 
   return (
-    <div className="overflow-x-auto rounded-[24px] border border-white/8 bg-transparent">
-      <table className="min-w-[56rem] w-full border-collapse">
+    <div className="overflow-x-auto rounded-[22px] border border-white/8 bg-transparent">
+      <table className="min-w-[52rem] w-full border-collapse">
         <thead>
           <tr>
-            <th className="w-40 border-b border-white/10 px-5 py-6 text-left align-bottom text-base font-semibold uppercase tracking-[0.18em] text-slate-400">
+            <th className="w-40 border-b border-white/10 px-4 py-5 text-left align-bottom text-base font-semibold uppercase tracking-[0.18em] text-slate-400">
               Compare
             </th>
             {slots.map((car, index) => (
               <th
                 key={car?.id ?? `empty-slot-${index}`}
-                className="border-b border-l border-white/10 px-5 py-6 text-left align-top"
+                className="border-b border-l border-white/10 px-4 py-5 text-left align-top"
               >
                 {car ? (
-                  <div className="space-y-4">
-                    <div className="relative aspect-[16/10] overflow-hidden rounded-[20px]">
+                  <div className="space-y-3">
+                    <div className="relative aspect-[16/10] overflow-hidden rounded-[18px]">
                       <Image
                         src={car.image}
                         alt={car.name}
@@ -98,16 +113,21 @@ export function CompareTable({
                       </button>
                       <button
                         type="button"
-                        onClick={() => onRemoveFromEngage(car.id)}
+                        onClick={() => setCarToUnpick(car)}
                         className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/10 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-400 transition hover:border-white/20 hover:bg-white/4 hover:text-slate-200"
                       >
-                        <X size={20} strokeWidth={2.4} className="text-slate-300" />
-                        Remove
+                        <Heart
+                          size={20}
+                          strokeWidth={2.4}
+                          className="fill-accent text-accent"
+                          aria-hidden="true"
+                        />
+                        Unpick
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex min-h-[22rem] flex-col items-center justify-center rounded-[20px] border border-dashed border-white/10 bg-white/[0.02] px-5 text-center">
+                  <div className="flex min-h-[20rem] flex-col items-center justify-center rounded-[18px] border border-dashed border-white/10 bg-white/[0.02] px-4 text-center">
                     <p className="text-base font-semibold text-white">Add another top pick</p>
                     <p className="mt-2 text-sm leading-6 text-slate-400">
                       Add another car to compare up to 3 top picks side by side.
@@ -124,13 +144,13 @@ export function CompareTable({
               key={row.key}
               className={rowIndex % 2 === 0 ? "bg-white/[0.02]" : "bg-transparent"}
             >
-              <th className="border-b border-white/10 px-5 py-4.5 text-left text-base font-semibold text-slate-400">
+              <th className="border-b border-white/10 px-4 py-3.5 text-left text-base font-semibold text-slate-400">
                 {row.label}
               </th>
               {slots.map((car, index) => (
                 <td
                   key={`${car?.id ?? `empty-slot-${index}`}-${row.key}`}
-                  className={`border-b border-l border-white/10 px-5 py-4.5 align-top text-lg leading-7 text-slate-100 ${
+                  className={`border-b border-l border-white/10 px-4 py-3.5 align-top text-lg leading-7 text-slate-100 ${
                     emphasizedRows.has(row.key) ? "font-semibold text-white" : "font-semibold"
                   }`}
                 >
@@ -161,6 +181,48 @@ export function CompareTable({
           ))}
         </tbody>
       </table>
+
+      {carToUnpick ? (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/75 px-5"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="unpick-confirmation-title"
+        >
+          <div className="w-full max-w-sm rounded-[28px] border border-input bg-panel p-5 shadow-[0_28px_80px_rgba(0,0,0,0.52)]">
+            <h2
+              id="unpick-confirmation-title"
+              className="text-xl font-semibold text-white"
+            >
+              Remove from Top Picks?
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              {carToUnpick.name} will return to your Liked cars.
+            </p>
+
+            <div className="mt-5 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setCarToUnpick(null)}
+                className="app-button rounded-full border border-input bg-input px-5 py-3 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onRemoveFromEngage(carToUnpick.id);
+                  setCarToUnpick(null);
+                }}
+                className="app-button inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+              >
+                <Heart size={18} strokeWidth={2.4} fill="currentColor" />
+                Unpick
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

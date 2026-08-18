@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import { Eye, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, ThumbsDown, ThumbsUp } from "lucide-react";
 import TinderCard from "react-tinder-card";
 
 import { CarCard } from "@/components/CarCard";
@@ -89,11 +89,11 @@ export function SwipeDeck({
     ? `${(cardsSeen / initialDiscoverDeckSize) * 100}%`
     : "0%";
   const reviewLikedButtonClassName = hasLikedCars
-    ? "app-button inline-flex justify-center rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
-    : "inline-flex cursor-default justify-center rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-white/7";
+    ? "app-button inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+    : "inline-flex cursor-default items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-white/7";
   const inlineReviewLikedButtonClassName = hasLikedCars
-    ? "app-button inline-flex w-fit items-center rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
-    : "inline-flex w-fit cursor-default items-center rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-slate-500 transition hover:bg-white/7";
+    ? "app-button inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
+    : "inline-flex w-fit cursor-default items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-slate-500 transition hover:bg-white/7";
 
   useEffect(() => {
     if (activeDeckSignatureRef.current === incomingDeckSignature) {
@@ -332,6 +332,7 @@ export function SwipeDeck({
               }`}
             >
               Review Liked
+              <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
             </Link>
             <button
               type="button"
@@ -342,8 +343,9 @@ export function SwipeDeck({
             </button>
             <Link
               href="/find-the-one"
-              className="inline-flex justify-center rounded-full px-5 py-2 text-sm font-semibold text-slate-400 transition hover:text-white"
+              className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-slate-400 transition hover:text-white"
             >
+              <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
               Refine Preferences
             </Link>
           </div>
@@ -354,7 +356,7 @@ export function SwipeDeck({
 
   return (
     <div
-      className="matches-swipe-deck space-y-2.5"
+      className="matches-swipe-deck space-y-2"
       onClickCapture={stopNudgeHint}
       onKeyDownCapture={stopNudgeHint}
       onPointerDownCapture={stopNudgeHint}
@@ -387,6 +389,7 @@ export function SwipeDeck({
             className={inlineReviewLikedButtonClassName}
           >
             Review Liked
+            <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
           </Link>
         </div>
         {preferenceChips.length ? (
@@ -409,7 +412,7 @@ export function SwipeDeck({
         </div>
       </div>
 
-      <div className="mx-auto max-w-xl">
+      <div className="mx-auto max-w-[33rem]">
         <div className="grid">
           {visibleCards
             .slice()

@@ -4,6 +4,12 @@
 
 This document defines the recommended admin workflow for managing listing ingestion inside Rev Matched.
 
+Related working notes:
+
+- `docs/ingestion-and-admin-process.md` — canonical source-to-live process
+- `docs/admin-review-checklist.md`
+- `docs/admin-review-field-backlog.md`
+
 The admin ingestion layer exists to:
 
 - monitor imported listings
@@ -39,26 +45,34 @@ The admin system should help the team:
 - improve normalization
 - and maintain inventory quality
 
-## Recommended MVP Admin Areas
-
-### Initial MVP Recommendation
+## Current Admin Navigation
 
 ```text
 /admin
-  Dashboard
-  Listings
-  Ingestion Runs
-  Review Queue
+  Overview
+  1. Ingest
+  2. Process Cars
 ```
 
-These four areas form the minimum useful admin foundation for the ingestion layer.
+These areas follow the real operational order, but each has a distinct job:
 
-They should allow the team to:
+```text
+Overview → Ingest → Process Cars
+```
 
-- understand what inventory exists
-- understand how ingestion runs are behaving
-- review listings that need decisions
-- and build confidence in the operational flow before real scraping and source syncing mature
+- **Overview:** What needs attention, and is the operation healthy?
+- **1. Ingest:** What am I importing, and did the import succeed?
+- **2. Process Cars:** Which listings am I reviewing, and what happens next?
+
+Overview is deliberately not a second listing-processing workspace. The full interactive five-step pipeline belongs only on **2. Process Cars**.
+
+The listings workspace contains the detailed lifecycle:
+
+```text
+Imported → Verified → Seller Contacted → Pics Received → Live
+```
+
+There is no separate top-level Review Queue. Review concerns such as missing fields, uncertainty, duplicates, staleness, or attribution are handled within the appropriate listing and workflow stage.
 
 ## Admin Workflow Overview
 
@@ -80,38 +94,61 @@ The goal is to keep the discovery inventory:
 - understandable
 - and recommendation-ready
 
+## Current Listing Lifecycle
+
+The full source-fetch through go-live process is defined in [Ingestion and Admin Process](./ingestion-and-admin-process.md). This document describes the admin-screen and operating details for the part that begins after a record is Imported.
+
+Each imported vehicle now moves through this admin-owned path:
+
+```text
+Imported → Verified → Seller Contacted → Pics Received → Live
+```
+
+- **Imported:** the record has arrived and must be checked against its source.
+- **Verified:** all required listing fields have been checked or corrected.
+- **Seller Contacted:** the admin is recording outreach, seller agreement, or follow-up. Seller agreement is an outcome inside this step, not the pipeline step itself.
+- **Pics Received:** the seller has supplied approved pics, ready for the final go-live check.
+- **Live:** visible to buyers.
+
+When recording a seller result, the admin records the contact method, contact time, outcome, optional note, and follow-up date where needed. A seller agreement or no response remains within **Seller Contacted**. Other results can move the listing to **Pics Received**, **Seller Declined**, or **Retired** (sold/unavailable). These entries are saved as admin-only history.
+
 ## 1. Admin Dashboard
 
 ### Purpose
 
-The dashboard is the operational summary screen.
+The dashboard is the operational summary screen. It turns real local database values into a short, action-led view; it does not duplicate the full Process Cars workflow rail or detailed listing-editing controls.
 
 It should answer:
 
-- how much inventory is currently in the system
-- how much of it needs attention
+- what changed today
+- what needs attention now
+- what is ready to move forward
 - whether the latest ingestion activity looks healthy
-- and where the team should focus next
 
-### Recommended MVP metrics
+### Current Overview composition
 
-- total imported listings
-- listings needing review
-- active listings
-- stale listings
-- duplicate warnings
-- latest ingestion run status
+- **Your next move:** a contextual red action such as **Review 5 new listings**, which opens Process Cars filtered to Imported. When Imported is empty, it uses a calm neutral Process Cars action instead.
+- **Today at a glance:** compact cards for New imports, Needs review, Waiting on sellers, and Pictures received. These use real values only:
+  - New imports uses the stored raw-record fetch timestamp in the Trinidad and Tobago timezone.
+  - Needs review maps to the current Imported workflow stage.
+  - Waiting on sellers maps to Seller Contacted, including No response records that remain in that stage.
+  - Pictures received maps to Pics Received, the existing final-review stage; it does not imply that the listing will become live automatically.
+- **Where listings are now:** a compact, linked segmented bar and five-stage legend (Imported, Verified, Seller Contacted, Pics Received, Live). It uses current workflow totals, keeps zero-count labels visible, and gives a short data-derived observation. The full interactive pipeline remains only on Process Cars.
+- **Latest ingestion:** the latest `ingestion_runs` record with source, completion status, run date/time, selected listing date, run type, Found and Imported counts, and errors or duplicates only when they are non-zero. It links directly to that run's detail popup and to Ingest.
+
+### Current data limitation
+
+The database does not yet keep an immutable `first_imported_at` value for each normalized listing. Therefore **New imports** means listings whose stored source-fetch timestamp falls today, not a guaranteed count of records first seen today. This is intentionally documented instead of inventing a number or adding a schema change during the screen-refinement work.
 
 ### Admin value
 
 This page should help an admin quickly decide:
 
-- is the ingestion system healthy today?
-- do we have review backlog?
-- are stale or duplicate issues growing?
+- should I review newly imported records now?
+- which existing stage needs action next?
 - did the latest run finish cleanly?
 
-## 2. Admin Listings
+## 2. Process Cars
 
 ### Purpose
 
@@ -153,7 +190,7 @@ Admins should eventually be able to:
 
 For MVP, visibility into those decisions is more important than full editing power.
 
-## 3. Admin Ingestion Runs
+## 1. Ingest
 
 ### Purpose
 
@@ -191,46 +228,11 @@ Admins should use this page to spot:
 - run quality degradation
 - and rising duplicate or stale-inventory pressure
 
-## 4. Admin Review Queue
-
-### Purpose
-
-The review queue is the most important human-control layer in the MVP ingestion system.
-
-It exists for listings that should not be silently trusted by automation alone.
-
-### Recommended review reasons
-
-- missing price
-- missing brand/model
-- uncertain normalization
-- duplicate warning
-- stale availability
-- image/source attribution concerns
-
-### Admin value
-
-This queue should help answer:
-
-- what inventory is risky or incomplete?
-- what needs a human decision before it can be trusted?
-- what should be demoted, blocked, corrected, or approved?
-
-### Recommended workflow outcome
-
-Each reviewed listing should eventually move toward one of these outcomes:
-
-- approved for discovery
-- approved with limits
-- kept out of direct recommendations
-- marked stale or inactive
-- held for future review
-
 ## Recommended Admin Review Logic
 
 Admins should not need to inspect every listing equally.
 
-The system should use review queues and warning states to focus attention where it matters most.
+The system should use review warnings within the listing workspace to focus attention where it matters most.
 
 ### High-priority review cases
 

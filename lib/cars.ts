@@ -13,7 +13,16 @@ export type Car = {
   vehicleType: string;
   brand: string;
   model: string;
+  plateSeries?: string;
+  colour?: string;
+  engineSize?: string;
+  isNegotiable?: boolean;
+  facts?: string[];
   image: string;
+  images?: string[];
+  imageIsPlaceholder?: boolean;
+  sellerContactName?: string | null;
+  sellerContactPhone?: string | null;
   ingestionListingId?: string | null;
 };
 

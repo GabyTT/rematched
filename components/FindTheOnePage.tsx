@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
   CarFront,
   Check,
   DollarSign,
@@ -56,6 +57,8 @@ const BUDGET_SLIDER_MAX = 2000000;
 const BUDGET_SLIDER_STEP = 5000;
 const DEFAULT_MIN_BUDGET = 80000;
 const DEFAULT_MAX_BUDGET = 300000;
+const DISCOVER_PREFERENCES_HANDOFF_KEY =
+  "revmatched.discover-preferences-handoff";
 const formatBudgetSliderValue = (value: number) =>
   `TT$${new Intl.NumberFormat("en-US").format(value)}`;
 const formatCompactBudgetSliderValue = (value: number) =>
@@ -976,9 +979,7 @@ export function FindTheOnePage() {
       model: currentFormValues.model,
     };
 
-    if (isDirty) {
-      updatePreferences(nextPreferences);
-    }
+    updatePreferences(nextPreferences);
 
     try {
       const {
@@ -1017,6 +1018,15 @@ export function FindTheOnePage() {
     wasDirtyRef.current = false;
     clearDirtyShakeTimers();
     setIsDirtyPopActive(false);
+    try {
+      window.sessionStorage.setItem(
+        DISCOVER_PREFERENCES_HANDOFF_KEY,
+        JSON.stringify(nextPreferences),
+      );
+    } catch {
+      // Journey preferences still provide the normal route handoff.
+    }
+
     router.push("/discover");
     return true;
   }, [
@@ -1025,7 +1035,6 @@ export function FindTheOnePage() {
     currentFormValues.minBudget,
     currentFormValues.model,
     currentFormValues.vehicleType,
-    isDirty,
     isSubmitting,
     budgetRangeIsValid,
     clearDirtyShakeTimers,
@@ -1382,10 +1391,10 @@ export function FindTheOnePage() {
 
   return (
     <main className="min-h-screen w-full max-w-full overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(209,19,58,0.16),transparent_24%),linear-gradient(180deg,#011118_0%,#000000_44%,#04121a_100%)] text-foreground">
-      <div className="mx-auto grid w-full max-w-full gap-6 px-5 py-5 sm:px-8 lg:max-w-7xl lg:grid-cols-[1.18fr_0.82fr] lg:px-12 lg:py-6">
+      <div className="mx-auto grid w-full max-w-full gap-5 px-5 py-4 sm:px-7 lg:max-w-7xl lg:grid-cols-[1.18fr_0.82fr] lg:px-10 lg:py-5">
         <section
           ref={defineCardRef}
-          className={`page-panel motion-rise-fade motion-delay-1 rounded-[32px] border border-[#d9e0e7] p-5 text-[#17212b] transition sm:p-6 lg:p-5 ${
+          className={`page-panel motion-rise-fade motion-delay-1 rounded-[30px] border border-[#d9e0e7] p-4 text-[#17212b] transition sm:p-5 lg:p-[1.125rem] ${
             isHelperWizardOpen
               ? "bg-[#dfe5eb] opacity-[0.78] shadow-[0_1px_6px_rgba(0,0,0,0.04)]"
               : "bg-white shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
@@ -1419,14 +1428,21 @@ export function FindTheOnePage() {
                 form="define-preferences-form"
                 data-dirty={isDirty ? "true" : "false"}
                 data-pop={isDirtyPopActive ? "true" : "false"}
-                className={`app-button inline-flex w-full items-center justify-center rounded-full border px-5 py-2 text-sm font-semibold text-white transition duration-200 hover:scale-[1.02] sm:w-auto md:text-base disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`app-button inline-flex w-full items-center justify-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold text-white transition duration-200 hover:scale-[1.02] sm:w-auto md:text-base disabled:cursor-not-allowed disabled:opacity-60 ${
                   isDirty
                     ? "border-transparent bg-accent hover:brightness-110 save-discover-dirty"
                     : "save-discover-idle border-[#aebac5] bg-[#8a98a6] hover:bg-[#7b8996] hover:brightness-105"
                 } ${isDirtyPopActive ? "save-discover-pop" : ""}`}
                 disabled={isSubmitting || !budgetRangeIsValid}
               >
-                {isSubmitting ? "Opening Discover..." : "Save and Discover"}
+                {isSubmitting ? (
+                  "Opening Discover..."
+                ) : (
+                  <>
+                    Save and Discover
+                    <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
+                  </>
+                )}
               </button>
             </div>
             <div>
@@ -1455,7 +1471,7 @@ export function FindTheOnePage() {
           <form
             id="define-preferences-form"
             onSubmit={handleSubmit}
-            className="mt-6 grid gap-4 lg:gap-3 md:grid-cols-2"
+            className="mt-5 grid gap-3 md:grid-cols-2"
           >
             <div
               className={`md:col-span-2 rounded-[24px] ${getAttentionFieldClassName("budget")}`}
@@ -1954,7 +1970,7 @@ export function FindTheOnePage() {
                           <div className="absolute inset-y-0 left-[20%] right-[14%] rounded-full bg-[linear-gradient(90deg,rgba(255,255,255,0.12)_0%,rgba(209,19,58,0.88)_52%,rgba(255,227,195,0.56)_100%)]" />
                           <div className="absolute left-[68%] top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#ffb4c0]/70 bg-[#D1133A] shadow-[0_0_18px_rgba(209,19,58,0.38)]" />
                         </div>
-                        <div className="mt-2 flex items-center justify-between text-[0.68rem] font-semibold text-white/78">
+                        <div className="mt-2 flex items-center justify-between text-xs font-semibold text-white/78">
                           <span>$120k</span>
                           <span>$250k</span>
                         </div>

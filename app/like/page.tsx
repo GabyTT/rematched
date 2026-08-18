@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Eye, FileText, Heart, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, FileText, Heart, ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { CarCard } from "@/components/CarCard";
 import { CarDetailsModal } from "@/components/CarDetailsModal";
@@ -41,8 +41,8 @@ export default function LikePage() {
   const hasTopPicks = engagedCount > 0;
   const canEngageMore = engagedCount < 3;
   const reviewTopPicksButtonClassName = hasTopPicks
-    ? "app-button inline-flex w-fit items-center rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
-    : "inline-flex w-fit cursor-default items-center rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-slate-500 transition hover:bg-white/7";
+    ? "app-button inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
+    : "inline-flex w-fit cursor-default items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-slate-500 transition hover:bg-white/7";
   const activeNotesCar = activeNotesCarId
     ? activeInventoryCars.find((car) => car.id === activeNotesCarId) ?? null
     : null;
@@ -119,9 +119,9 @@ export default function LikePage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-5 py-6 sm:px-7 lg:px-10 lg:py-8">
         {reviewCars.length ? (
-          <section className="page-panel motion-rise-fade motion-delay-0 rounded-[28px] border border-input bg-panel p-5 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-6">
+          <section className="page-panel motion-rise-fade motion-delay-0 rounded-[26px] border border-input bg-panel p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="max-w-3xl">
                 <h1 className="flex items-center gap-3 text-3xl font-semibold text-white sm:text-4xl">
@@ -144,7 +144,7 @@ export default function LikePage() {
                     </span>
                   </button>
                 </h1>
-                <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+                <p className="mt-3 max-w-3xl text-base leading-relaxed text-slate-300 md:text-lg">
                   These caught your eye. Compare them, make notes, and move your best ones to Top Picks.
                 </p>
               </div>
@@ -163,6 +163,7 @@ export default function LikePage() {
                   }`}
                 >
                   Review Top Picks
+                  <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
                 </Link>
               </div>
             </div>
@@ -213,8 +214,8 @@ export default function LikePage() {
               </div>
             ) : null}
 
-            <div className="mt-6">
-              <div className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-5">
+              <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {reviewCars.map((car) => {
                   const isInTopPicks = carProgress[car.id]?.state === "matched";
 
@@ -290,7 +291,7 @@ export default function LikePage() {
                                 }`}
                               />
                               {isInTopPicks
-                                ? "Back to Liked"
+                                ? "Unpick"
                                 : canEngageMore
                                   ? "Top Pick?"
                                   : "Top Pick full"}
@@ -313,31 +314,48 @@ export default function LikePage() {
             </div>
           </section>
         ) : (
-          <section className="page-panel motion-rise-fade motion-delay-0 rounded-[28px] border border-dashed border-input bg-panel p-8 text-center shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-            <h1 className="flex items-center justify-center gap-3 text-3xl font-semibold text-white sm:text-4xl">
-              <ThumbsUp
-                size={28}
-                strokeWidth={0}
-                className="shrink-0 fill-current text-slate-200"
-                aria-hidden="true"
-              />
-              Your Liked Cars
-            </h1>
-            <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
-              These caught your eye. Compare them, make notes, and move your best ones to Top Picks.
-            </p>
-            <h2 className="mt-6 text-2xl font-semibold text-white">
-              Your liked cars are empty
-            </h2>
-            <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
-              Like a few cars in Discover and come back here to review them.
-            </p>
-            <Link
-              href="/discover"
-              className="app-button mt-6 inline-flex rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
-            >
+          <section className="page-panel motion-rise-fade motion-delay-0 overflow-hidden rounded-[26px] border border-input bg-panel shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
+            <div className="grid items-center gap-8 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.8fr)] lg:gap-10 lg:p-8">
+              <div className="max-w-xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                  Your liked cars · 0
+                </p>
+                <h1 className="mt-3 text-3xl font-semibold text-white sm:text-4xl">
+                  Nothing saved yet
+                </h1>
+                <p className="mt-3 max-w-lg text-base leading-relaxed text-slate-300 md:text-lg">
+                  Explore cars that catch your eye, then like your favourites to keep them here for comparison.
+                </p>
+                <Link
+                  href="/discover"
+                  className="app-button mt-6 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+                >
+              <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
               Go to Discover
-            </Link>
+                </Link>
+              </div>
+
+              <div
+                aria-hidden="true"
+                className="relative mx-auto h-[13.5rem] w-full max-w-[24rem] sm:h-[15rem] lg:mx-0"
+              >
+                <div className="absolute left-1 top-8 h-[10.75rem] w-[43%] -rotate-[5deg] rounded-[20px] border border-white/10 bg-[#0a1b21] shadow-[0_16px_28px_rgba(0,0,0,0.2)] sm:h-[12rem]" />
+                <div className="absolute right-1 top-8 h-[10.75rem] w-[43%] rotate-[5deg] rounded-[20px] border border-white/10 bg-[#0a1b21] shadow-[0_16px_28px_rgba(0,0,0,0.2)] sm:h-[12rem]" />
+                <div className="absolute left-1/2 top-0 flex h-[12.5rem] w-[52%] -translate-x-1/2 flex-col overflow-hidden rounded-[22px] border border-white/15 bg-[#0d2229] shadow-[0_20px_34px_rgba(0,0,0,0.3)] sm:h-[14rem]">
+                  <div className="flex h-[48%] items-center justify-center bg-[radial-gradient(circle_at_50%_5%,rgba(226,15,65,0.3),transparent_58%),linear-gradient(135deg,#102a31,#07191e)]">
+                    <ThumbsUp size={38} strokeWidth={1.8} className="text-slate-300" />
+                  </div>
+                  <div className="flex flex-1 flex-col justify-center gap-2.5 p-4">
+                    <div className="h-2.5 w-4/5 rounded-full bg-white/20" />
+                    <div className="h-2.5 w-3/5 rounded-full bg-white/10" />
+                    <div className="mt-1 flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                      <ThumbsUp size={14} strokeWidth={2.2} />
+                      Liked
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </section>
         )}
 

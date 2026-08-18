@@ -3,18 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ArrowDownToLine,
   ClipboardList,
   LayoutDashboard,
-  RefreshCw,
-  ScanSearch,
   Shield,
 } from "lucide-react";
 
 const adminNavItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/listings", label: "Listings", icon: ClipboardList },
-  { href: "/admin/ingestion-runs", label: "Ingestion Runs", icon: RefreshCw },
-  { href: "/admin/review-queue", label: "Review Queue", icon: ScanSearch },
+  { href: "/admin", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/ingestion-runs", label: "1. Ingest", icon: ArrowDownToLine },
+  { href: "/admin/listings", label: "2. Process cars", icon: ClipboardList },
 ];
 
 type AdminShellProps = {
@@ -38,17 +36,11 @@ export function AdminShell({
             <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-slate-100">
               <Shield size={20} strokeWidth={2.2} />
             </span>
-            <p className="text-sm uppercase tracking-[0.24em] text-slate-400">
+            <p className="text-sm font-semibold uppercase tracking-[0.32em] text-slate-400">
               Admin
             </p>
           </div>
-          <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
-            {title}
-          </h1>
-          <p className="mt-3 max-w-3xl text-base leading-relaxed text-slate-300 md:text-lg">
-            {description}
-          </p>
-          <nav className="mt-6 flex flex-wrap gap-3">
+          <nav className="mt-5 flex flex-wrap gap-3">
             {adminNavItems.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
@@ -57,10 +49,10 @@ export function AdminShell({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                  className={`nav-pill inline-flex min-h-11 items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
                     isActive
-                      ? "border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.24)]"
-                      : "border-white/12 bg-white/5 text-slate-200 hover:bg-white/8"
+                      ? "border-white bg-white text-[#D1133A] shadow-[0_10px_24px_rgba(255,255,255,0.14)]"
+                      : "nav-pill-inactive border-input bg-input text-slate-300"
                   }`}
                 >
                   <Icon size={16} strokeWidth={2.2} className="mr-2.5" />
@@ -69,6 +61,12 @@ export function AdminShell({
               );
             })}
           </nav>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            {title}
+          </h1>
+          <p className="mt-3 max-w-3xl text-base leading-relaxed text-slate-300 md:text-lg">
+            {description}
+          </p>
         </section>
 
         {children}

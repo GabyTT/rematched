@@ -24,14 +24,10 @@ import {
   recommendationEligibilityLabels,
   reviewReasonLabels,
 } from "@/lib/adminIngestion";
+import { formatAdminDateTime } from "@/lib/formatAdminDateTime";
 
 const formatDateTime = (value: string | null) =>
-  value
-    ? new Intl.DateTimeFormat("en-TT", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(new Date(value))
-    : "Not available";
+  formatAdminDateTime(value, "Not available");
 
 const formatPrice = (value: number | null) =>
   value === null
@@ -202,7 +198,7 @@ export default function AdminListingDetailPage() {
           {normalizedListing.confidenceNotes.map((note) => (
             <div
               key={note}
-              className="rounded-[18px] border border-white/8 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-slate-300"
+              className="rounded-[18px] border border-white/8 bg-white/[0.03] px-4 py-3 text-base leading-7 text-slate-300"
             >
               {note}
             </div>
@@ -270,7 +266,8 @@ export default function AdminListingDetailPage() {
                 <a
                   href={rawListing.sourceListingUrl}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
+                  title={rawListing.sourceListingUrl}
                   className="underline decoration-white/20 underline-offset-4 transition hover:text-slate-100"
                 >
                   Open source record
@@ -405,7 +402,7 @@ export default function AdminListingDetailPage() {
                   <AdminBadge label={`Confidence ${Math.round(warning.confidenceScore * 100)}%`} tone="warn" />
                   <AdminBadge label={warning.status} tone="neutral" />
                 </div>
-                <p className="mt-3 text-sm leading-7 text-slate-300">
+                <p className="mt-3 text-base leading-7 text-slate-300">
                   Possible related listings: {warning.possibleDuplicateListingIds.join(", ")}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -416,7 +413,7 @@ export default function AdminListingDetailPage() {
               </article>
             ))
           ) : (
-            <p className="text-sm leading-7 text-slate-300">
+            <p className="text-base leading-7 text-slate-300">
               No duplicate warnings are currently attached to this listing.
             </p>
           )}

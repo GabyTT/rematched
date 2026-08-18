@@ -438,6 +438,20 @@ These overlays help the app preserve flow while still supporting deeper interact
 
 They should be treated as supporting interaction surfaces rather than primary screens, but they are part of the real user journey and matter for product planning.
 
+### Shared Popup Design Standard
+
+This is the default visual and interaction standard for every centred popup in Rev Matched, including buyer, seller, and admin experiences. A popup is a focused message or decision surface; it must never look like transparent content layered over the page.
+
+- **Backdrop:** dim the underlying screen with a black overlay so the popup is the clear focus.
+- **Popup surface:** use a fully opaque, true-black background (`#000000`). Do not use a translucent panel background that allows the page behind to show through.
+- **Shape and separation:** use the established rounded panel shape, a restrained slate border, and a soft dark shadow to separate the popup from the backdrop.
+- **Close control:** use a simple `×` icon in the upper-right. It must not have a coloured circle, coloured border, or coloured focus ring around it. Its job is to be available without competing with the popup's primary action.
+- **Primary action:** use the existing Rev Matched red action-button treatment only for the clear next step, such as **Got it**, **Confirm**, or **Continue**.
+- **Content hierarchy:** show a small context label, a clear title, and short supporting text. Avoid putting a full screen's worth of detail inside a simple popup.
+- **Behaviour:** the popup sits above the current screen, keeps the user in their current context, and closes through either the `×` or its explicit dismissal action.
+
+Use a **right-side drawer**, rather than this centred popup pattern, when the user needs to compare or work with ongoing information beside the current page — for example, reviewing a Rev Matched listing alongside its original source page.
+
 ## Screen Maturity Snapshot
 
 The current screen set is not equally mature across all three major experiences.

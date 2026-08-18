@@ -11,6 +11,10 @@ These docs are doing two different jobs:
 
 If you are new to the project, it helps to know which kind of document you are reading.
 
+## Local Development Rule
+
+When building or testing Rev Matched locally, always use **http://localhost:3001**. Port 3000 belongs to another local app. The project command `npm run dev` is configured to use port 3001.
+
 ## Strategy and Direction
 
 Use these when shaping the long-term product, experience, and recommendation vision.
@@ -40,6 +44,7 @@ Use these when you need to understand the product as it currently behaves or how
 Use these when discussing inventory structure, listing normalization, and future schema direction.
 
 - [RevMatched Data Dictionary](./rev-matched-data-dictionary.md)
+- [Ingestion and Admin Process](./ingestion-and-admin-process.md) — the current operational source of truth from source fetch through go-live.
 - [Real Listing Field Analysis](./real-listing-field-analysis.md)
 - [Supabase Schema Direction](./supabase-schema-direction.md)
 - [Database Implementation Plan](./database-implementation-plan.md)
@@ -47,6 +52,9 @@ Use these when discussing inventory structure, listing normalization, and future
 - [Listing Ingestion Implementation Brief](./listing-ingestion-implementation-brief.md)
 - [Recommendation Eligibility Notes](./recommendation-eligibility-notes.md)
 - [Admin Ingestion Workflow](./admin-ingestion-workflow.md)
+- [Seller Account and Photo Approval — First-Build Plan](./seller-account-and-photo-approval-plan.md)
+- [TriniCars Seller Form — Rev Matched Field Mapping](./trinicars-seller-field-mapping.md) — current seller-form fields versus their existing database locations and remaining optional gaps.
+- [Current Listing Field Completeness Report](./current-listing-field-completeness-report.md) — read-only baseline of how complete the current local listing data is.
 
 ## Supporting Assets
 
@@ -65,4 +73,4 @@ Recommended flow:
 5. Read `implementation-gap-notes.md` when deciding what product areas most need deeper implementation work.
 6. Read `build-roadmap.md` when sequencing that work into practical product phases.
 7. Use `ux-principles.md`, `revmatched-tone.md`, and `terminology.md` when shaping interface behaviour, naming, and copy.
-8. Use `rev-matched-data-dictionary.md`, `real-listing-field-analysis.md`, `supabase-schema-direction.md`, `database-implementation-plan.md`, `listing-ingestion-product-notes.md`, `listing-ingestion-implementation-brief.md`, `recommendation-eligibility-notes.md`, and `admin-ingestion-workflow.md` when discussing listing structure, normalization, ingestion, recommendation readiness, admin review workflow, and future schema work.
+8. Start with `ingestion-and-admin-process.md` for the operational flow from source fetch through go-live. Use `rev-matched-data-dictionary.md`, `real-listing-field-analysis.md`, `supabase-schema-direction.md`, `database-implementation-plan.md`, `listing-ingestion-product-notes.md`, `listing-ingestion-implementation-brief.md`, `recommendation-eligibility-notes.md`, and `admin-ingestion-workflow.md` for supporting detail.
