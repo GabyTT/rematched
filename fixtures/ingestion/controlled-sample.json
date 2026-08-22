@@ -1,0 +1,47 @@
+{
+  "source": {
+    "name": "controlled_sample",
+    "type": "marketplace",
+    "baseUrl": "https://example.invalid/rev-matched-sample",
+    "notes": "Local controlled fixture. No live marketplace content."
+  },
+  "listings": [
+    {
+      "sourceListingId": "sample-001",
+      "sourceListingUrl": "https://example.invalid/rev-matched-sample/sample-001",
+      "title": "2020 Toyota Corolla Hybrid",
+      "description": "Local used, automatic, recently serviced.",
+      "priceText": "TT$118,000 negotiable",
+      "locationText": "San Fernando",
+      "contactText": "WhatsApp available",
+      "sellerLabel": "Private seller",
+      "mileageText": "65,000 km",
+      "fuelText": "Hybrid",
+      "transmissionText": "Automatic",
+      "trimText": "G",
+      "images": [],
+      "rawPayload": {
+        "fixture": true,
+        "sourceFormatVersion": 1
+      }
+    },
+    {
+      "sourceListingId": "sample-002",
+      "sourceListingUrl": "https://example.invalid/rev-matched-sample/sample-002",
+      "title": "2019 Nissan Note",
+      "description": "Foreign used hatchback. Call for details.",
+      "priceText": "$79K",
+      "locationText": "Chaguanas",
+      "contactText": "Phone available",
+      "sellerLabel": "Dealer",
+      "mileageText": "48,500 km",
+      "fuelText": "Gasoline",
+      "transmissionText": "Automatic",
+      "images": [],
+      "rawPayload": {
+        "fixture": true,
+        "sourceFormatVersion": 1
+      }
+    }
+  ]
+}
