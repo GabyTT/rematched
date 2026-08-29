@@ -77,14 +77,15 @@ type SponsorCardProps = {
 export function SponsorCard({
   sponsor,
   title,
+  description,
   cta,
 }: SponsorCardProps) {
   const { name } = sponsors[sponsor];
 
   return (
-    <article className="w-full overflow-hidden rounded-[24px] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.07)_0%,rgba(255,255,255,0.035)_52%,rgba(255,255,255,0.02)_100%)] px-4 py-4 shadow-[0_16px_36px_rgba(0,0,0,0.2)] sm:px-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-[18px] border border-white/10 bg-white/5 sm:h-20 sm:w-32 lg:h-24 lg:w-40">
+    <article className="w-full overflow-hidden rounded-[24px] border border-emerald-400/30 bg-[radial-gradient(circle_at_top_right,rgba(52,211,153,0.1),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.07)_0%,rgba(255,255,255,0.035)_52%,rgba(255,255,255,0.02)_100%)] px-4 py-3.5 shadow-[0_16px_36px_rgba(0,0,0,0.2)] sm:px-5 sm:py-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-[18px] border border-emerald-300/25 bg-white/5 sm:h-20 sm:w-32 lg:h-24 lg:w-40">
           <Image
             src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1200&q=80"
             alt="Insurance and ownership documents arranged on a desk"
@@ -96,21 +97,25 @@ export function SponsorCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold tracking-tight text-white md:text-xl">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="inline-flex rounded-full border border-emerald-300/35 bg-emerald-300/10 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-emerald-200">
+              Sponsored
+            </span>
+            <span aria-hidden="true" className="text-xs text-slate-400">•</span>
+            <span className="text-xs font-semibold text-slate-200">{name}</span>
+          </div>
+          <h3 className="mt-1.5 text-lg font-semibold tracking-tight text-white sm:mt-2 md:text-xl">
             {title}
           </h3>
-          <p className="mt-1 text-sm leading-5 text-slate-300 md:text-base">
-            Check real costs before deciding.
-          </p>
-          <p className="mt-1.5 text-xs font-medium text-slate-400 md:text-sm">
-            Insurance support by {name}
+          <p className="mt-0.5 text-sm leading-5 text-slate-300 sm:mt-1 md:text-base">
+            {description}
           </p>
         </div>
 
         <div className="flex shrink-0 sm:justify-end">
           <button
             type="button"
-            className="inline-flex min-h-10 w-fit items-center justify-center rounded-full border border-white/18 bg-transparent px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/35 hover:bg-white/10 hover:text-white"
+            className="inline-flex min-h-10 w-fit items-center justify-center rounded-full border border-emerald-300/35 bg-transparent px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-emerald-300/60 hover:bg-emerald-300/10 hover:text-white"
           >
             {cta}
           </button>

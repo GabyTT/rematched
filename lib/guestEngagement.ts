@@ -101,3 +101,11 @@ export function trackGuestSessionCompleted(date = new Date()) {
     };
   });
 }
+
+export function clearGuestEngagement() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(GUEST_ENGAGEMENT_KEY);
+}

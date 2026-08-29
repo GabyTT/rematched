@@ -90,7 +90,6 @@ async function saveBuyerProfile(
       {
         auth_user_id: authUserId,
         display_name: displayName,
-        role: "buyer",
       },
       {
         onConflict: "auth_user_id",

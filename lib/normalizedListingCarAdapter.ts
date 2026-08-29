@@ -146,7 +146,7 @@ export function mapNormalizedListingToCar(
     fuel: formatLabel(listing.fuel_type, "Fuel not listed"),
     transmission,
     location: listing.location_label?.trim() || "Location not listed",
-    category: formatLabel(listing.body_type, "Available listing"),
+    category: formatLabel(listing.body_type, ""),
     vehicleType,
     brand,
     model,
@@ -160,6 +160,8 @@ export function mapNormalizedListingToCar(
     imageIsPlaceholder: listingImage.imageIsPlaceholder,
     sellerContactName: listing.public_contact_name,
     sellerContactPhone: listing.public_contact_phone,
+    availabilityStatus: listing.availability_status,
+    soldAt: listing.sold_at,
   };
 }
 

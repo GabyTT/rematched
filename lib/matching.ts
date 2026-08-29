@@ -18,7 +18,10 @@ const normalizeBrands = (brands: string[] | null | undefined) =>
   (brands ?? []).map((brand) => normalize(brand)).filter(Boolean);
 
 const hasAvailabilityField = (car: Car) =>
-  "isActive" in car || "availability" in car || "status" in car;
+  "isActive" in car ||
+  "availability" in car ||
+  "availabilityStatus" in car ||
+  "status" in car;
 
 export function hasValidBudgetRange(preferences: Preferences) {
   return (
@@ -119,6 +122,7 @@ export function carIsAvailable(car: Car) {
 
   const maybeActive = car as Car & {
     availability?: string | null;
+    availabilityStatus?: string | null;
     isActive?: boolean | null;
     status?: string | null;
   };
@@ -127,11 +131,30 @@ export function carIsAvailable(car: Car) {
     return false;
   }
 
-  const availability = normalize(maybeActive.availability);
+  const availability = normalize(
+    maybeActive.availabilityStatus ?? maybeActive.availability,
+  );
   const status = normalize(maybeActive.status);
 
   return !["inactive", "sold", "unavailable"].includes(availability) &&
     !["inactive", "sold", "unavailable"].includes(status);
+}
+
+export function isSoldListing(car: Car) {
+  return normalize(car.availabilityStatus) === "sold";
+}
+
+export function isSavedListingVisible(car: Car, now = Date.now()) {
+  if (carIsAvailable(car)) {
+    return true;
+  }
+
+  if (!isSoldListing(car) || !car.soldAt) {
+    return false;
+  }
+
+  const soldAt = Date.parse(car.soldAt);
+  return Number.isFinite(soldAt) && now < soldAt + 20 * 24 * 60 * 60 * 1000;
 }
 
 export function getBuyerRecommendationProfile(car: Car) {

@@ -14,6 +14,8 @@ import TinderCard from "react-tinder-card";
 
 import { CarCard } from "@/components/CarCard";
 import { CarDetailsModal } from "@/components/CarDetailsModal";
+import { InfoIconButton } from "@/components/InfoIconButton";
+import { buyerCardActionClassName } from "@/lib/buyerCardActionStyles";
 import { useJourney } from "@/components/JourneyProvider";
 import { useMounted } from "@/hooks/useMounted";
 import type { Car } from "@/lib/cars";
@@ -89,11 +91,11 @@ export function SwipeDeck({
     ? `${(cardsSeen / initialDiscoverDeckSize) * 100}%`
     : "0%";
   const reviewLikedButtonClassName = hasLikedCars
-    ? "app-button inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
-    : "inline-flex cursor-default items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-white/7";
+    ? "app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-3 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 sm:px-5"
+    : "inline-flex min-h-11 cursor-default items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-white/7 sm:px-5";
   const inlineReviewLikedButtonClassName = hasLikedCars
-    ? "app-button inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
-    : "inline-flex w-fit cursor-default items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-slate-500 transition hover:bg-white/7";
+    ? "app-button inline-flex min-h-11 w-fit items-center gap-2 rounded-xl bg-accent px-3 py-2 text-sm font-medium text-white transition hover:bg-accent/90 sm:px-5"
+    : "inline-flex min-h-11 w-fit cursor-default items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-white/7 sm:px-5";
 
   useEffect(() => {
     if (activeDeckSignatureRef.current === incomingDeckSignature) {
@@ -301,11 +303,11 @@ export function SwipeDeck({
 
   if (!currentCar) {
     return (
-      <div className="matches-completion-card rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.045)_0%,rgba(255,255,255,0.018)_100%)] p-6 shadow-[0_18px_42px_rgba(0,0,0,0.26)] sm:p-8">
+      <div className="matches-completion-card rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.045)_0%,rgba(255,255,255,0.018)_100%)] p-3 shadow-[0_18px_42px_rgba(0,0,0,0.26)] sm:p-8">
         <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-white/8">
           <div className="matches-completion-progress h-full rounded-full bg-emerald-400" />
         </div>
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-5">
           <div>
             <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full border border-emerald-400/20 bg-emerald-400/10 text-emerald-200">
               ✓
@@ -317,37 +319,39 @@ export function SwipeDeck({
               Want to take another look or explore more?
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:items-end">
-            <Link
-              href="/like"
-              aria-disabled={!hasLikedCars}
-              tabIndex={hasLikedCars ? undefined : -1}
-              onClick={(event) => {
-                if (!hasLikedCars) {
-                  event.preventDefault();
-                }
-              }}
-              className={`${reviewLikedButtonClassName} ${
-                shouldShakeReviewLiked ? "matches-review-liked-shake" : ""
-              }`}
-            >
-              Review Liked
-              <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
-            </Link>
-            <button
-              type="button"
-              onClick={onKeepExploring}
-              className="app-button inline-flex justify-center rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/25 hover:bg-white/10"
-            >
-              Keep Exploring
-            </button>
+          <div className="flex flex-nowrap items-start justify-between gap-2 sm:gap-3">
             <Link
               href="/find-the-one"
-              className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-slate-400 transition hover:text-white"
+              className="app-button inline-flex min-h-11 w-fit shrink-0 whitespace-nowrap items-center justify-start gap-1.5 rounded-xl border border-white/18 px-2 py-2 text-sm font-semibold text-white transition hover:bg-white/6 sm:gap-2 sm:px-4"
             >
               <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
               Refine Preferences
             </Link>
+            <div className="ml-auto flex shrink-0 flex-col items-end gap-3">
+              <Link
+                href="/like"
+                aria-disabled={!hasLikedCars}
+                tabIndex={hasLikedCars ? undefined : -1}
+                onClick={(event) => {
+                  if (!hasLikedCars) {
+                    event.preventDefault();
+                  }
+                }}
+                className={`w-fit shrink-0 whitespace-nowrap ${reviewLikedButtonClassName} ${
+                  shouldShakeReviewLiked ? "matches-review-liked-shake" : ""
+                }`}
+              >
+                Review Liked
+                <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
+              </Link>
+              <button
+                type="button"
+                onClick={onKeepExploring}
+                className="app-button inline-flex justify-center rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/25 hover:bg-white/10"
+              >
+                Keep Exploring
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -362,35 +366,42 @@ export function SwipeDeck({
       onPointerDownCapture={stopNudgeHint}
     >
       <div className="space-y-2">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-3">
           <div className="flex items-center gap-2.5 text-xl font-semibold text-white sm:text-2xl">
             <span aria-hidden="true">🔍</span>
             <span>Your Matches · {currentCardNumber} of {initialDiscoverDeckSize}</span>
-            <button
-              type="button"
+            <InfoIconButton
               onClick={() => setIsHelpSheetOpen(true)}
-              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.28)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel active:scale-95"
               aria-label="How Like and Pass work"
             >
               <span aria-hidden="true" className="font-serif text-[1.3rem] font-bold italic leading-none">
                 i
               </span>
-            </button>
+            </InfoIconButton>
           </div>
-          <Link
-            href="/like"
-            aria-disabled={!hasLikedCars}
-            tabIndex={hasLikedCars ? undefined : -1}
-            onClick={(event) => {
-              if (!hasLikedCars) {
-                event.preventDefault();
-              }
-            }}
-            className={inlineReviewLikedButtonClassName}
-          >
-            Review Liked
-            <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
-          </Link>
+          <div className="flex flex-nowrap items-center justify-between gap-2 sm:gap-3">
+            <Link
+              href="/find-the-one"
+              className="app-button inline-flex min-h-11 shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl border border-white/18 px-2 py-2 text-sm font-semibold text-white transition hover:bg-white/6 sm:gap-2 sm:px-4"
+            >
+              <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
+              Refine Preferences
+            </Link>
+            <Link
+              href="/like"
+              aria-disabled={!hasLikedCars}
+              tabIndex={hasLikedCars ? undefined : -1}
+              onClick={(event) => {
+                if (!hasLikedCars) {
+                  event.preventDefault();
+                }
+              }}
+              className={`ml-auto shrink-0 whitespace-nowrap ${inlineReviewLikedButtonClassName}`}
+            >
+              Review Liked
+              <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
+            </Link>
+          </div>
         </div>
         {preferenceChips.length ? (
           <div className="flex flex-wrap gap-2">
@@ -480,7 +491,7 @@ export function SwipeDeck({
 
                                 setActiveDetailsCar(car);
                               }}
-                              className="pointer-events-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#D9E0E7] bg-white px-4 py-2.5 text-sm font-semibold text-[#16212B] transition duration-200 hover:border-accent hover:bg-accent hover:text-white"
+                              className={`pointer-events-auto ${buyerCardActionClassName("secondary", "light")}`}
                             >
                               <Eye
                                 size={20}
@@ -493,7 +504,7 @@ export function SwipeDeck({
                               <button
                                 type="button"
                                 onClick={() => triggerButtonSwipe("left")}
-                                className="pointer-events-auto inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-[#D9E0E7] bg-white px-4 py-2.5 text-sm font-semibold text-[#16212B] transition duration-200 hover:border-accent"
+                                className={`pointer-events-auto flex-1 ${buyerCardActionClassName("neutral", "light")}`}
                               >
                                 <ThumbsDown
                                   size={20}
@@ -505,7 +516,7 @@ export function SwipeDeck({
                               <button
                                 type="button"
                                 onClick={() => triggerButtonSwipe("right")}
-                                className="pointer-events-auto inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-accent bg-accent px-4 py-2.5 text-sm font-semibold text-white transition duration-200 hover:brightness-110"
+                                className={`pointer-events-auto flex-1 ${buyerCardActionClassName("primary", "light")}`}
                               >
                                 <ThumbsUp
                                   size={20}

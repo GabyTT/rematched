@@ -24,6 +24,8 @@ export type Car = {
   sellerContactName?: string | null;
   sellerContactPhone?: string | null;
   ingestionListingId?: string | null;
+  availabilityStatus?: string | null;
+  soldAt?: string | null;
 };
 
 export const cars: Car[] = [
@@ -389,4 +391,8 @@ export const cars: Car[] = [
     image:
       "https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=1200&q=80",
   },
-];
+].map((car, index) => ({
+  ...car,
+  sellerContactName: index % 2 === 0 ? "John" : "Jane",
+  sellerContactPhone: "888-8888",
+}));

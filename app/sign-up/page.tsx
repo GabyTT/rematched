@@ -98,8 +98,10 @@ export default function SignUpPage() {
       return;
     }
 
-    if (data.session) {
-      await supabase.auth.setSession(data.session);
+    const session = data.session;
+
+    if (session) {
+      await supabase.auth.setSession(session);
     } else {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
@@ -114,13 +116,13 @@ export default function SignUpPage() {
     }
 
     const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+      data: { user: signedInUser },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session?.user || session.user.id !== authUserId) {
+    if (userError || !signedInUser || signedInUser.id !== authUserId) {
       setErrorMessage(
-        sessionError?.message ??
+        userError?.message ??
           "Your account was created, but a signed-in Supabase session was not available.",
       );
       setIsSubmitting(false);
@@ -142,7 +144,7 @@ export default function SignUpPage() {
       return;
     }
 
-    markAuthenticated();
+    markAuthenticated(signedInUser);
     router.push("/discover");
   };
 

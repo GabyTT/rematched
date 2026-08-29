@@ -49,6 +49,7 @@ const visibleListing: NormalizedListing = {
   source_listing_url: "https://example.test/adapter-visible",
   source_missing_at: null,
   source_missing_run_id: null,
+  sold_at: null,
   title: "Toyota Corolla Cross 2020",
   transmission_type: "automatic",
   trim_name: null,
@@ -125,6 +126,8 @@ assert.deepEqual(mappedCar.images, [
 assert.equal(mappedCar.imageIsPlaceholder, false);
 assert.equal(mappedCar.sellerContactName, null);
 assert.equal(mappedCar.sellerContactPhone, null);
+assert.equal(mappedCar.availabilityStatus, "available");
+assert.equal(mappedCar.soldAt, null);
 assert.equal(mappedCar.ingestionListingId, undefined);
 
 const fallbackCar = mapNormalizedListingToCar({
@@ -148,7 +151,7 @@ assert.equal(fallbackCar.mileage, "Mileage not listed");
 assert.equal(fallbackCar.fuel, "Fuel not listed");
 assert.equal(fallbackCar.transmission, "Transmission not listed");
 assert.equal(fallbackCar.location, "Location not listed");
-assert.equal(fallbackCar.category, "Available listing");
+assert.equal(fallbackCar.category, "Available");
 assert.equal(fallbackCar.vehicleType, "other");
 assert.equal(fallbackCar.brand, "Unknown make");
 assert.equal(fallbackCar.model, "Unknown model");

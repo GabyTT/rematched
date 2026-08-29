@@ -7,12 +7,14 @@ import {
   ClipboardList,
   LayoutDashboard,
   Shield,
+  Users,
 } from "lucide-react";
 
 const adminNavItems = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/ingestion-runs", label: "1. Ingest", icon: ArrowDownToLine },
   { href: "/admin/listings", label: "2. Process cars", icon: ClipboardList },
+  { href: "/admin/users", label: "Users & roles", icon: Users },
 ];
 
 type AdminShellProps = {

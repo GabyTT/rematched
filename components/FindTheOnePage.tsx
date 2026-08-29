@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { useJourney, type Preferences } from "@/components/JourneyProvider";
+import { InfoIconButton } from "@/components/InfoIconButton";
 import { useMounted } from "@/hooks/useMounted";
 import { DEFAULT_BRANDS } from "@/lib/brands";
 import {
@@ -44,6 +45,8 @@ const normalizeBrands = (value: string[]) =>
   sortBrands(value.map((item) => item.trim()).filter(Boolean));
 const formLabelClassName =
   "mb-2.5 block text-[0.95rem] font-semibold tracking-[0.01em] text-[#314154]";
+const defineFormSurfaceClass =
+  "bg-[#f2f6f9] shadow-[0_8px_24px_rgba(0,0,0,0.15)]";
 const helperSecondaryButtonClass =
   "inline-flex min-h-14 justify-center rounded-full border-2 border-[#D1133A] bg-white px-6 py-3.5 text-sm font-semibold text-[#111827] transition hover:bg-[rgba(209,19,58,0.05)]";
 const helperPrimaryButtonClass =
@@ -569,6 +572,7 @@ export function FindTheOnePage() {
   const defineNudgeCountRef = useRef(0);
   const defineHelpPointerStartYRef = useRef<number | null>(null);
   const defineCardRef = useRef<HTMLElement | null>(null);
+  const helperWizardsRef = useRef<HTMLDivElement | null>(null);
   const minBudgetFieldRef = useRef<HTMLInputElement | null>(null);
   const vehicleTypeFieldRef = useRef<HTMLSelectElement | null>(null);
   const brandSearchFieldRef = useRef<HTMLInputElement | null>(null);
@@ -1245,6 +1249,24 @@ export function FindTheOnePage() {
   const isHelperWizardOpen =
     helperStep !== "intro" || budgetHelperStep !== "intro";
 
+  useEffect(() => {
+    if (
+      !isHelperWizardOpen ||
+      !window.matchMedia("(max-width: 767px)").matches
+    ) {
+      return undefined;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      helperWizardsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [isHelperWizardOpen]);
+
   const handleApplySuggestedType = () => {
     if (!helperResult) {
       return;
@@ -1274,6 +1296,11 @@ export function FindTheOnePage() {
     setHelperAnswers(helperInitialAnswers);
     setHelperPendingSelection(null);
     setHelperTransitioning(false);
+  };
+
+  const startCarTypeGuide = () => {
+    setHelperQuestionIndex(0);
+    setHelperStep("question");
   };
 
   const runHelperTransition = useCallback(
@@ -1394,10 +1421,10 @@ export function FindTheOnePage() {
       <div className="mx-auto grid w-full max-w-full gap-5 px-5 py-4 sm:px-7 lg:max-w-7xl lg:grid-cols-[1.18fr_0.82fr] lg:px-10 lg:py-5">
         <section
           ref={defineCardRef}
-          className={`page-panel motion-rise-fade motion-delay-1 rounded-[30px] border border-[#d9e0e7] p-4 text-[#17212b] transition sm:p-5 lg:p-[1.125rem] ${
+          className={`page-panel motion-rise-fade motion-delay-1 rounded-[30px] border border-[#c8d5df] p-4 text-[#17212b] transition sm:p-5 lg:p-[1.125rem] ${
             isHelperWizardOpen
               ? "bg-[#dfe5eb] opacity-[0.78] shadow-[0_1px_6px_rgba(0,0,0,0.04)]"
-              : "bg-white shadow-[0_8px_24px_rgba(0,0,0,0.15)]"
+              : defineFormSurfaceClass
           } ${defineAttentionClassName} ${isDefineNudgeActive ? "swipe-card-nudge" : ""}`}
         >
           <div>
@@ -1412,23 +1439,22 @@ export function FindTheOnePage() {
                 <h2 className="text-2xl font-semibold leading-tight text-[#17212b] sm:text-[2rem]">
                   Define What Matters
                 </h2>
-                <button
-                  type="button"
+                <InfoIconButton
                   onClick={() => setIsDefineHelpOpen(true)}
-                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.24)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.32)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/55 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:scale-95"
+                  focusRingOffsetClassName="focus-visible:ring-offset-[#f2f6f9]"
                   aria-label="How Define preferences work"
                 >
                   <span aria-hidden="true" className="font-serif text-[1.3rem] font-bold italic leading-none">
                     i
                   </span>
-                </button>
+                </InfoIconButton>
               </div>
               <button
                 type="submit"
                 form="define-preferences-form"
                 data-dirty={isDirty ? "true" : "false"}
                 data-pop={isDirtyPopActive ? "true" : "false"}
-                className={`app-button inline-flex w-full items-center justify-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold text-white transition duration-200 hover:scale-[1.02] sm:w-auto md:text-base disabled:cursor-not-allowed disabled:opacity-60 ${
+                className={`app-button inline-flex w-full items-center justify-center gap-2 rounded-xl border px-5 py-2 text-sm font-semibold text-white transition duration-200 hover:scale-[1.02] sm:w-auto md:text-base disabled:cursor-not-allowed disabled:opacity-60 ${
                   isDirty
                     ? "border-transparent bg-accent hover:brightness-110 save-discover-dirty"
                     : "save-discover-idle border-[#aebac5] bg-[#8a98a6] hover:bg-[#7b8996] hover:brightness-105"
@@ -1458,7 +1484,7 @@ export function FindTheOnePage() {
             </p>
           ) : null}
           {isLoadingSavedPreferences ? (
-            <p className="mt-4 rounded-[22px] border border-[#d9e0e7] bg-[#f5f7fa] px-5 py-3 text-sm text-[#314154]">
+            <p className="mt-4 rounded-[22px] border border-[#c8d5df] bg-[#f5f7fa] px-5 py-3 text-sm text-[#314154]">
               Loading saved preferences...
             </p>
           ) : null}
@@ -1480,8 +1506,8 @@ export function FindTheOnePage() {
                 <span className={formLabelClassName}>
                   What price range feels right?
                 </span>
-                <div className="w-full max-w-full overflow-hidden rounded-[24px] border border-[#d9e0e7] bg-[#f5f7fa] px-5 py-4 sm:px-6 lg:py-3.5">
-                  <div className="relative w-full max-w-full overflow-hidden pt-10 pb-11 lg:pt-9 lg:pb-10">
+                <div className="w-full max-w-full overflow-hidden rounded-[24px] border border-[#c8d5df] bg-[#f5f7fa] px-5 py-4 sm:px-6 lg:py-3.5">
+                  <div className="relative w-full max-w-full overflow-visible pt-10 pb-11 lg:pt-9 lg:pb-10">
                     <div className="absolute left-0 right-0 top-12 lg:top-11 h-2 rounded-full bg-[#d8e0e6]" />
                     <div
                       className="absolute top-12 lg:top-11 h-2 rounded-full bg-[#D1133A]"
@@ -1492,8 +1518,15 @@ export function FindTheOnePage() {
                     />
 
                     <div
-                      className="absolute top-[3.95rem] hidden -translate-x-1/2 sm:block lg:top-[3.6rem]"
-                      style={{ left: `${minBudgetPercent}%` }}
+                      className={`absolute top-[3.95rem] z-30 hidden sm:block lg:top-[3.6rem] ${
+                        minBudgetPercent <= 8 ? "translate-x-0" : "-translate-x-1/2"
+                      }`}
+                      style={{
+                        left:
+                          minBudgetPercent <= 8
+                            ? "0%"
+                            : `${minBudgetPercent}%`,
+                      }}
                     >
                       <div className="rounded-full border border-[#f3c1cc] bg-white px-3 py-1 text-sm font-semibold text-[#17212b] shadow-[0_10px_20px_rgba(15,23,42,0.12)] whitespace-nowrap">
                         {formatBudgetSliderValue(sliderMinBudget)}
@@ -1546,7 +1579,7 @@ export function FindTheOnePage() {
                       }`}
                     />
                   </div>
-                  <div className="mt-2 flex w-full max-w-full items-center justify-between rounded-2xl border border-[#d9e0e7] bg-white px-4 py-2 text-sm font-semibold text-[#17212b] sm:hidden">
+                  <div className="mt-2 flex w-full max-w-full items-center justify-between rounded-2xl border border-[#c8d5df] bg-white px-4 py-2 text-sm font-semibold text-[#17212b] sm:hidden">
                     <span>
                       Min: {formatCompactBudgetSliderValue(sliderMinBudget)}
                     </span>
@@ -1560,6 +1593,14 @@ export function FindTheOnePage() {
                   </div>
                 </div>
               </label>
+              <button
+                type="button"
+                onClick={startBudgetHelper}
+                className="app-button mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-[#314154] transition hover:bg-[#f5f7fa] hover:text-[#D1133A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 md:hidden"
+              >
+                Need help? Start Budget Helper
+                <ArrowRight size={16} strokeWidth={2.4} className="text-[#D1133A]" aria-hidden="true" />
+              </button>
             </div>
 
             {budgetValidationMessage ? (
@@ -1568,27 +1609,37 @@ export function FindTheOnePage() {
               </p>
             ) : null}
 
-            <label
+            <div
               className={`block rounded-[24px] ${getAttentionFieldClassName("vehicle-type")}`}
             >
-              <span className={formLabelClassName}>
-                Vehicle type
-              </span>
-              <select
-                ref={vehicleTypeFieldRef}
-                value={vehicleType}
-                onChange={(event) => setVehicleType(event.target.value)}
-                className="app-input min-h-16 w-full appearance-none rounded-[22px] border border-[#d9e0e7] bg-[#f5f7fa] px-5 text-base text-[#17212b] outline-none"
+              <label className="block">
+                <span className={formLabelClassName}>
+                  Vehicle type
+                </span>
+                <select
+                  ref={vehicleTypeFieldRef}
+                  value={vehicleType}
+                  onChange={(event) => setVehicleType(event.target.value)}
+                  className="app-input min-h-16 w-full appearance-none rounded-[22px] border border-[#c8d5df] bg-[#f5f7fa] px-5 text-base text-[#17212b] outline-none"
+                >
+                  <option value="">All vehicle types</option>
+                  <option value="sedan">Sedan</option>
+                  <option value="hatchback">Hatchback</option>
+                  <option value="suv">SUV</option>
+                  <option value="pickup">Pickup</option>
+                  <option value="van">Van</option>
+                  <option value="luxury">Luxury</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={startCarTypeGuide}
+                className="app-button mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-[#314154] transition hover:bg-[#f5f7fa] hover:text-[#D1133A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 md:hidden"
               >
-                <option value="">All vehicle types</option>
-                <option value="sedan">Sedan</option>
-                <option value="hatchback">Hatchback</option>
-                <option value="suv">SUV</option>
-                <option value="pickup">Pickup</option>
-                <option value="van">Van</option>
-                <option value="luxury">Luxury</option>
-              </select>
-            </label>
+                Not sure? Start Car Type Guide
+                <ArrowRight size={16} strokeWidth={2.4} className="text-[#D1133A]" aria-hidden="true" />
+              </button>
+            </div>
 
             <label className="block">
               <span className={formLabelClassName}>
@@ -1598,7 +1649,7 @@ export function FindTheOnePage() {
                 value={model}
                 onChange={(event) => setModel(event.target.value)}
                 placeholder="Hilux, Sportage, X3..."
-                className="app-input min-h-16 w-full rounded-[22px] border border-[#d9e0e7] bg-[#f5f7fa] px-5 text-base text-[#17212b] outline-none placeholder:text-[#7d8f9d]"
+                className="app-input min-h-16 w-full rounded-[22px] border border-[#c8d5df] bg-[#f5f7fa] px-5 text-base text-[#17212b] outline-none placeholder:text-[#7d8f9d]"
               />
             </label>
 
@@ -1608,8 +1659,8 @@ export function FindTheOnePage() {
               <span className={formLabelClassName}>
                 Brands
               </span>
-              <div className="rounded-[24px] border border-[#d9e0e7] bg-[#f5f7fa] p-3 lg:p-[0.875rem]">
-                <div className="flex min-h-14 items-center gap-3 rounded-[20px] border border-[#d9e0e7] bg-white px-4 lg:min-h-[3.35rem]">
+              <div className="rounded-[24px] border border-[#c8d5df] bg-[#f5f7fa] p-3 lg:p-[0.875rem]">
+                <div className="flex min-h-14 items-center gap-3 rounded-[20px] border border-[#c8d5df] bg-white px-4 lg:min-h-[3.35rem]">
                   <SearchIcon size={20} strokeWidth={2.4} className="text-[#7d8f9d]" />
                   <input
                     ref={brandSearchFieldRef}
@@ -1665,7 +1716,7 @@ export function FindTheOnePage() {
                             key={brand}
                             type="button"
                             onClick={() => toggleBrand(brand)}
-                            className="nav-pill inline-flex min-h-11 items-center gap-2 rounded-full border border-[#d9e0e7] bg-white px-4 py-2 text-sm font-semibold whitespace-nowrap text-[#314154] transition hover:border-accent"
+                            className="nav-pill inline-flex min-h-11 items-center gap-2 rounded-full border border-[#c8d5df] bg-white px-4 py-2 text-sm font-semibold whitespace-nowrap text-[#314154] transition hover:border-accent"
                           >
                             {brand}
                           </button>
@@ -1686,7 +1737,10 @@ export function FindTheOnePage() {
         </section>
 
         <div
-          className={`motion-rise-fade motion-delay-2 space-y-6 lg:flex lg:flex-col lg:gap-5 lg:space-y-0 lg:overflow-visible ${
+          ref={helperWizardsRef}
+          className={`motion-rise-fade motion-delay-2 ${
+            isHelperWizardOpen ? "block" : "hidden"
+          } md:block md:space-y-6 lg:flex lg:flex-col lg:gap-5 lg:space-y-0 lg:overflow-visible ${
             isHelperWizardOpen ? "lg:h-auto lg:max-h-none" : "lg:h-[calc(100vh-140px)] lg:max-h-[660px]"
           }`}
         >
@@ -1694,13 +1748,12 @@ export function FindTheOnePage() {
             data-card-root={helperStep === "intro" ? "true" : undefined}
             className={
               helperStep === "intro"
-                ? `interactive-card-hover helper-intro-card relative ${helperIntroCardClassName} cursor-pointer rounded-[24px] border p-[1px] text-slate-100`
+                ? `hidden md:block interactive-card-hover helper-intro-card relative ${helperIntroCardClassName} cursor-pointer rounded-[24px] border p-[1px] text-slate-100`
                 : `${helperCardBaseClassName} relative z-50`
             }
             onClick={() => {
               if (helperStep === "intro") {
-                setHelperQuestionIndex(0);
-                setHelperStep("question");
+                startCarTypeGuide();
               }
             }}
             role={helperStep === "intro" ? "button" : undefined}
@@ -1711,8 +1764,7 @@ export function FindTheOnePage() {
                 (event.key === "Enter" || event.key === " ")
               ) {
                 event.preventDefault();
-                setHelperQuestionIndex(0);
-                setHelperStep("question");
+                startCarTypeGuide();
               }
             }}
           >
@@ -1748,9 +1800,9 @@ export function FindTheOnePage() {
                       </p>
                     </div>
                     <div className="pt-6">
-                      <span className="helper-intro-cta inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#D1133A] shadow-[0_12px_24px_rgba(0,0,0,0.22)] sm:text-[0.98rem]">
+                      <span className="helper-intro-cta inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-[#17212b] shadow-[0_12px_24px_rgba(0,0,0,0.22)] sm:text-[0.98rem]">
                         Start Car Type Guide
-                        <span aria-hidden="true" className="text-base leading-none">
+                        <span aria-hidden="true" className="text-base leading-none text-[#D1133A]">
                           →
                         </span>
                       </span>
@@ -1905,7 +1957,7 @@ export function FindTheOnePage() {
             data-card-root={budgetHelperStep === "intro" ? "true" : undefined}
             className={
               budgetHelperStep === "intro"
-                ? `interactive-card-hover helper-intro-card relative rounded-[24px] ${helperIntroCardClassName} cursor-pointer border p-[1px] text-slate-100`
+                ? `hidden md:block interactive-card-hover helper-intro-card relative rounded-[24px] ${helperIntroCardClassName} cursor-pointer border p-[1px] text-slate-100`
                 : `${helperCardBaseClassName} relative z-50`
             }
             onClick={() => {
@@ -1958,9 +2010,9 @@ export function FindTheOnePage() {
                     </div>
 
                     <div className="flex items-end justify-between gap-4 pt-6">
-                      <span className="helper-intro-cta inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#D1133A] shadow-[0_12px_24px_rgba(0,0,0,0.22)] sm:text-[0.98rem]">
+                      <span className="helper-intro-cta inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-[#17212b] shadow-[0_12px_24px_rgba(0,0,0,0.22)] sm:text-[0.98rem]">
                         Start Budget Helper
-                        <span aria-hidden="true" className="text-base leading-none">
+                        <span aria-hidden="true" className="text-base leading-none text-[#D1133A]">
                           →
                         </span>
                       </span>

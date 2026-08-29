@@ -259,6 +259,7 @@ export type Database = {
           source_listing_url: string | null
           source_missing_at: string | null
           source_missing_run_id: string | null
+          sold_at: string | null
           title: string | null
           transmission_type: string | null
           trim_name: string | null
@@ -300,6 +301,7 @@ export type Database = {
           source_listing_url?: string | null
           source_missing_at?: string | null
           source_missing_run_id?: string | null
+          sold_at?: string | null
           title?: string | null
           transmission_type?: string | null
           trim_name?: string | null
@@ -341,6 +343,7 @@ export type Database = {
           source_listing_url?: string | null
           source_missing_at?: string | null
           source_missing_run_id?: string | null
+          sold_at?: string | null
           title?: string | null
           transmission_type?: string | null
           trim_name?: string | null
@@ -451,7 +454,6 @@ export type Database = {
           display_name: string | null
           id: string
           phone: string | null
-          role: string
           updated_at: string
           whatsapp_enabled: boolean
         }
@@ -461,7 +463,6 @@ export type Database = {
           display_name?: string | null
           id?: string
           phone?: string | null
-          role?: string
           updated_at?: string
           whatsapp_enabled?: boolean
         }
@@ -471,9 +472,26 @@ export type Database = {
           display_name?: string | null
           id?: string
           phone?: string | null
-          role?: string
           updated_at?: string
           whatsapp_enabled?: boolean
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -936,6 +954,8 @@ export type Database = {
           public_contact_name: string | null
           public_contact_phone: string | null
           raw_listing_id: string | null
+          availability_status: string
+          sold_at: string | null
           transmission_type: string | null
           year: number | null
         }

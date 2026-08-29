@@ -1,6 +1,7 @@
 import { Eye } from "lucide-react";
 
 import { CarDecisionActions } from "@/components/CarDecisionActions";
+import { buyerCardActionClassName } from "@/lib/buyerCardActionStyles";
 
 type CarBrowseActionsProps = {
   onViewDetails: () => void;
@@ -26,11 +27,10 @@ export function CarBrowseActions({
       <button
         type="button"
         onClick={onViewDetails}
-        className={`app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
-          isLight
-            ? "border border-[#D9E0E7] bg-white text-[#16212B] hover:border-accent hover:bg-accent hover:text-white"
-            : "border border-white/18 bg-transparent text-slate-100 hover:border-white/35 hover:bg-white/6 hover:text-white"
-        }`}
+        className={buyerCardActionClassName(
+          "secondary",
+          isLight ? "light" : "dark",
+        )}
       >
         <Eye
           size={20}

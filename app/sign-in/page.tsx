@@ -21,7 +21,7 @@ export default function SignInPage() {
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
@@ -32,7 +32,13 @@ export default function SignInPage() {
       return;
     }
 
-    markAuthenticated();
+    if (!data.user) {
+      setErrorMessage("Sign-in completed without a user session. Please try again.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    markAuthenticated(data.user);
     router.push("/discover");
   };
 
@@ -103,6 +109,13 @@ export default function SignInPage() {
           </form>
 
           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => router.push("/reset-password")}
+              className="text-left text-sm font-semibold text-slate-300 transition hover:text-white"
+            >
+              Forgot your password?
+            </button>
             <button
               type="button"
               onClick={() => router.push("/sign-up")}

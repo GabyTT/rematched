@@ -5,21 +5,31 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import type { Car } from "@/lib/cars";
+import { AI_CAR_PLACEHOLDER_PATH } from "@/lib/listingImagePolicy";
+import { phoneLink } from "@/lib/sellerContact";
 
 type CarDetailsModalProps = {
   car: Car;
   onClose: () => void;
+  showSellerContact?: boolean;
 };
 
-function phoneLink(phoneNumber: string) {
-  return `tel:${phoneNumber.replace(/[^0-9+]/g, "")}`;
-}
-
-export function CarDetailsModal({ car, onClose }: CarDetailsModalProps) {
-  const galleryImages = car.images?.length ? car.images : [car.image];
+export function CarDetailsModal({
+  car,
+  onClose,
+  showSellerContact = true,
+}: CarDetailsModalProps) {
+  const galleryImages = (car.images?.length ? car.images : [car.image]).filter(
+    Boolean,
+  );
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const activeImage = galleryImages[activeImageIndex] ?? galleryImages[0];
+  const [failedImageIndexes, setFailedImageIndexes] = useState<Set<number>>(
+    new Set(),
+  );
+  const activeImage = galleryImages[activeImageIndex] ?? AI_CAR_PLACEHOLDER_PATH;
   const hasGallery = galleryImages.length > 1;
+  const isShowingFallback =
+    !galleryImages.length || failedImageIndexes.has(activeImageIndex);
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -69,13 +79,20 @@ export function CarDetailsModal({ car, onClose }: CarDetailsModalProps) {
         <section className="mt-6">
           <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-input bg-input/70">
             <Image
-              src={activeImage}
+              src={isShowingFallback ? AI_CAR_PLACEHOLDER_PATH : activeImage}
               alt={`${car.name} photo ${activeImageIndex + 1} of ${galleryImages.length}`}
               fill
               sizes="(max-width: 1024px) 100vw, 896px"
+              onError={() => {
+                setFailedImageIndexes((current) => {
+                  const next = new Set(current);
+                  next.add(activeImageIndex);
+                  return next;
+                });
+              }}
               className="object-cover object-center"
             />
-            {car.imageIsPlaceholder ? (
+            {car.imageIsPlaceholder || isShowingFallback ? (
               <span className="absolute bottom-3 left-3 rounded-full border border-amber-200/30 bg-black/75 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-amber-100 backdrop-blur-sm">
                 AI illustration — not the actual vehicle
               </span>
@@ -196,15 +213,17 @@ export function CarDetailsModal({ car, onClose }: CarDetailsModalProps) {
               {car.location}
             </p>
           </div>
-          <div className="rounded-2xl border border-input bg-input/70 p-4">
-            <p className="text-sm text-slate-400">Category</p>
-            <p className="mt-2 text-base font-semibold text-white">
-              {car.category}
-            </p>
-          </div>
+          {car.category.trim() ? (
+            <div className="rounded-2xl border border-input bg-input/70 p-4">
+              <p className="text-sm text-slate-400">Vehicle Type</p>
+              <p className="mt-2 text-base font-semibold text-white">
+                {car.category}
+              </p>
+            </div>
+          ) : null}
         </div>
 
-        {car.sellerContactName || car.sellerContactPhone ? (
+        {showSellerContact && (car.sellerContactName || car.sellerContactPhone) ? (
           <section className="mt-6 rounded-2xl border border-emerald-300/30 bg-emerald-400/5 p-4">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-200">
               Contact seller

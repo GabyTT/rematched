@@ -6,10 +6,14 @@ import { ArrowLeft, ArrowRight, Eye, FileText, Heart, ThumbsDown, ThumbsUp } fro
 
 import { CarCard } from "@/components/CarCard";
 import { CarDetailsModal } from "@/components/CarDetailsModal";
+import { BuyerEmptyState } from "@/components/BuyerEmptyState";
+import { InfoIconButton } from "@/components/InfoIconButton";
+import { buyerCardActionClassName } from "@/lib/buyerCardActionStyles";
 import { NotesModal } from "@/components/NotesModal";
 import { TopPickLimitSheet } from "@/components/TopPickLimitSheet";
 import { useJourney } from "@/components/JourneyProvider";
 import { useMounted } from "@/hooks/useMounted";
+import { isSavedListingVisible, isSoldListing } from "@/lib/matching";
 
 export default function LikePage() {
   const mounted = useMounted();
@@ -32,17 +36,22 @@ export default function LikePage() {
   const reviewTopPicksPulseFrameRef = useRef<number | null>(null);
   const reviewTopPicksPulseTimeoutRef = useRef<number | null>(null);
 
-  const reviewCars = activeInventoryCars.filter((car) =>
-    ["liked", "matched"].includes(carProgress[car.id]?.state ?? ""),
+  const reviewCars = activeInventoryCars.filter(
+    (car) =>
+      ["liked", "matched"].includes(carProgress[car.id]?.state ?? "") &&
+      isSavedListingVisible(car),
   );
   const engagedCount = activeInventoryCars.filter(
-    (car) => carProgress[car.id]?.state === "matched",
+    (car) =>
+      carProgress[car.id]?.state === "matched" && !isSoldListing(car),
   ).length;
-  const hasTopPicks = engagedCount > 0;
+  const hasTopPicks = reviewCars.some(
+    (car) => carProgress[car.id]?.state === "matched",
+  );
   const canEngageMore = engagedCount < 3;
   const reviewTopPicksButtonClassName = hasTopPicks
-    ? "app-button inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
-    : "inline-flex w-fit cursor-default items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-slate-500 transition hover:bg-white/7";
+    ? "app-button inline-flex min-h-11 w-fit items-center gap-2 rounded-xl bg-accent px-3 py-2 text-sm font-medium text-white transition hover:bg-accent/90 sm:px-5"
+    : "inline-flex min-h-11 w-fit cursor-default items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-white/7 sm:px-5";
   const activeNotesCar = activeNotesCarId
     ? activeInventoryCars.find((car) => car.id === activeNotesCarId) ?? null
     : null;
@@ -122,7 +131,7 @@ export default function LikePage() {
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-5 py-6 sm:px-7 lg:px-10 lg:py-8">
         {reviewCars.length ? (
           <section className="page-panel motion-rise-fade motion-delay-0 rounded-[26px] border border-input bg-panel p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-4">
               <div className="max-w-3xl">
                 <h1 className="flex items-center gap-3 text-3xl font-semibold text-white sm:text-4xl">
                   <ThumbsUp
@@ -132,23 +141,28 @@ export default function LikePage() {
                     aria-hidden="true"
                   />
                   Your Liked Cars
-                  <button
-                    type="button"
+                  <InfoIconButton
                     onClick={() => setIsLikedHelpOpen((current) => !current)}
                     aria-expanded={isLikedHelpOpen}
                     aria-label="How Liked cars work"
-                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.28)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel active:scale-95"
                   >
                     <span aria-hidden="true" className="font-serif text-[1.3rem] font-bold italic leading-none">
                       i
                     </span>
-                  </button>
+                  </InfoIconButton>
                 </h1>
                 <p className="mt-3 max-w-3xl text-base leading-relaxed text-slate-300 md:text-lg">
                   These caught your eye. Compare them, make notes, and move your best ones to Top Picks.
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+              <div className="flex flex-nowrap items-center justify-between gap-2 sm:gap-3">
+                <Link
+                  href="/discover"
+                  className="app-button inline-flex min-h-11 shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl border border-white/18 px-2 py-2 text-sm font-semibold text-white transition hover:bg-white/6 sm:gap-2 sm:px-4"
+                >
+                  <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
+                  Back to Discover
+                </Link>
                 <Link
                   href="/match"
                   aria-disabled={!hasTopPicks}
@@ -158,7 +172,7 @@ export default function LikePage() {
                       event.preventDefault();
                     }
                   }}
-                  className={`${reviewTopPicksButtonClassName} ${
+                  className={`ml-auto shrink-0 whitespace-nowrap ${reviewTopPicksButtonClassName} ${
                     shouldPulseReviewTopPicks ? "liked-review-top-picks-pulse" : ""
                   }`}
                 >
@@ -218,14 +232,16 @@ export default function LikePage() {
               <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {reviewCars.map((car) => {
                   const isInTopPicks = carProgress[car.id]?.state === "matched";
+                  const isSold = isSoldListing(car);
 
                   return (
                     <CarCard
                       key={car.id}
                       {...car}
                       topPickCount={engagedCount}
-                      status={isInTopPicks ? "engaged" : "liked"}
+                      status={isSold ? "sold" : isInTopPicks ? "engaged" : "liked"}
                       overlay={
+                        !isSold &&
                         replacementCandidateCarId === car.id && !canEngageMore ? (
                           <TopPickLimitSheet
                             onConfirm={() => {
@@ -249,34 +265,34 @@ export default function LikePage() {
                           <button
                             type="button"
                             onClick={() => setActiveDetailsCarId(car.id)}
-                            className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/18 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/35 hover:bg-white/6 hover:text-white"
+                            className={buyerCardActionClassName("secondary")}
                           >
                             <Eye size={20} strokeWidth={2.4} className="text-slate-200" />
                             View Details
                           </button>
-                          <div className="flex flex-wrap gap-3">
+                          {!isSold ? <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.55fr)_minmax(0,0.9fr)] gap-3 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
                             <button
                               type="button"
                               onClick={() => setCarState(car.id, "rejected")}
                               aria-label={`Pass on ${car.name}`}
-                              className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/10 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-400 transition hover:border-white/20 hover:bg-white/4 hover:text-slate-200 sm:flex-none"
+                              className={`w-full whitespace-nowrap !gap-1.5 !px-1.5 sm:w-auto sm:!gap-2 sm:!px-4 ${buyerCardActionClassName("liked-reversal")}`}
                             >
                               <ThumbsDown
                                 size={20}
                                 strokeWidth={0}
-                                className="fill-current text-slate-300"
+                                className="fill-current text-slate-400"
                               />
-                              <span className="sm:sr-only">Pass</span>
+                              <span>Pass</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => handleTopPickAction(car.id, isInTopPicks)}
-                              className={`app-button inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
+                              className={`min-w-0 w-full whitespace-nowrap !gap-1.5 !px-3 sm:w-auto sm:!gap-2 sm:!px-4 ${
                                 isInTopPicks
-                                  ? "border-white/18 bg-transparent text-slate-100 hover:border-white/35 hover:bg-white/6 hover:text-white"
+                                  ? buyerCardActionClassName("secondary")
                                   : canEngageMore || replacementCandidateCarId === car.id
-                                    ? "border-accent bg-accent text-white hover:brightness-110"
-                                    : "border-white/18 bg-white/7 text-white hover:bg-white/10"
+                                    ? buyerCardActionClassName("liked-primary")
+                                    : buyerCardActionClassName("neutral")
                               }`}
                             >
                               <Heart
@@ -299,12 +315,12 @@ export default function LikePage() {
                             <button
                               type="button"
                               onClick={() => setActiveNotesCarId(car.id)}
-                              className="app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/18 bg-transparent px-4 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/35 hover:bg-white/6 hover:text-white sm:flex-none"
+                              className={`w-full whitespace-nowrap !gap-1.5 !px-1.5 sm:w-auto sm:!gap-2 sm:!px-4 ${buyerCardActionClassName("liked-tertiary")}`}
                             >
-                              <FileText size={20} strokeWidth={2.4} className="text-slate-200" />
+                              <FileText size={20} strokeWidth={2.4} className="text-slate-400" />
                               Notes
                             </button>
-                          </div>
+                          </div> : null}
                         </div>
                       }
                     />
@@ -315,8 +331,7 @@ export default function LikePage() {
           </section>
         ) : (
           <section className="page-panel motion-rise-fade motion-delay-0 overflow-hidden rounded-[26px] border border-input bg-panel shadow-[0_18px_40px_rgba(0,0,0,0.22)]">
-            <div className="grid items-center gap-8 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.8fr)] lg:gap-10 lg:p-8">
-              <div className="max-w-xl">
+            <BuyerEmptyState illustrationIcon={ThumbsUp} illustrationLabel="Liked">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
                   Your liked cars · 0
                 </p>
@@ -328,34 +343,12 @@ export default function LikePage() {
                 </p>
                 <Link
                   href="/discover"
-                  className="app-button mt-6 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
+                  className="app-button mt-6 inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110"
                 >
               <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
               Go to Discover
                 </Link>
-              </div>
-
-              <div
-                aria-hidden="true"
-                className="relative mx-auto h-[13.5rem] w-full max-w-[24rem] sm:h-[15rem] lg:mx-0"
-              >
-                <div className="absolute left-1 top-8 h-[10.75rem] w-[43%] -rotate-[5deg] rounded-[20px] border border-white/10 bg-[#0a1b21] shadow-[0_16px_28px_rgba(0,0,0,0.2)] sm:h-[12rem]" />
-                <div className="absolute right-1 top-8 h-[10.75rem] w-[43%] rotate-[5deg] rounded-[20px] border border-white/10 bg-[#0a1b21] shadow-[0_16px_28px_rgba(0,0,0,0.2)] sm:h-[12rem]" />
-                <div className="absolute left-1/2 top-0 flex h-[12.5rem] w-[52%] -translate-x-1/2 flex-col overflow-hidden rounded-[22px] border border-white/15 bg-[#0d2229] shadow-[0_20px_34px_rgba(0,0,0,0.3)] sm:h-[14rem]">
-                  <div className="flex h-[48%] items-center justify-center bg-[radial-gradient(circle_at_50%_5%,rgba(226,15,65,0.3),transparent_58%),linear-gradient(135deg,#102a31,#07191e)]">
-                    <ThumbsUp size={38} strokeWidth={1.8} className="text-slate-300" />
-                  </div>
-                  <div className="flex flex-1 flex-col justify-center gap-2.5 p-4">
-                    <div className="h-2.5 w-4/5 rounded-full bg-white/20" />
-                    <div className="h-2.5 w-3/5 rounded-full bg-white/10" />
-                    <div className="mt-1 flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                      <ThumbsUp size={14} strokeWidth={2.2} />
-                      Liked
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            </BuyerEmptyState>
           </section>
         )}
 

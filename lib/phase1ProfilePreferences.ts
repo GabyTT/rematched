@@ -74,7 +74,6 @@ async function getOrCreateCurrentUserProfile(supabase: TypedSupabaseClient) {
     .upsert(
       {
         auth_user_id: userId,
-        role: "buyer",
       },
       {
         onConflict: "auth_user_id",
@@ -135,7 +134,6 @@ export async function saveProfileForAuthUser(
     .upsert(
       {
         auth_user_id: authUserId,
-        role: "buyer",
         ...profile,
       },
       {

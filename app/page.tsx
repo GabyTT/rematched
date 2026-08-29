@@ -120,7 +120,7 @@ export default function Home() {
                 <Link
                   href="/find-the-one"
                   onClick={stopHeroNudges}
-                  className={`pointer-events-auto home-hero-cta motion-rise-fade motion-delay-3 card-cta app-button inline-flex min-h-[4.5rem] w-full items-center justify-center gap-2 rounded-[2.25rem] border border-[#D1133A] bg-[#D1133A] px-12 py-5 text-xl font-semibold text-[#FFFFFF] shadow-[0_18px_40px_rgba(209,19,58,0.32),0_0_30px_rgba(209,19,58,0.16)] hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_22px_48px_rgba(209,19,58,0.4),0_0_40px_rgba(209,19,58,0.22)] active:translate-y-0 active:scale-[0.98] sm:min-h-[4.75rem] sm:w-fit sm:px-14 sm:text-[1.35rem] ${
+                  className={`pointer-events-auto home-hero-cta motion-rise-fade motion-delay-3 card-cta app-button inline-flex min-h-[4.5rem] w-full items-center justify-center gap-2 rounded-xl border border-[#D1133A] bg-[#D1133A] px-12 py-5 text-xl font-semibold text-[#FFFFFF] shadow-[0_18px_40px_rgba(209,19,58,0.32),0_0_30px_rgba(209,19,58,0.16)] hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_22px_48px_rgba(209,19,58,0.4),0_0_40px_rgba(209,19,58,0.22)] active:translate-y-0 active:scale-[0.98] sm:min-h-[4.75rem] sm:w-fit sm:px-14 sm:text-[1.35rem] ${
                     isHeroCtaNudging ? "home-hero-cta-nudge" : ""
                   }`}
                 >

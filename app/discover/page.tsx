@@ -8,6 +8,8 @@ import { ArrowLeft, ArrowRight, DollarSign, Grid2x2, RotateCcw, Search } from "l
 import { CarBrowseActions } from "@/components/CarBrowseActions";
 import { CarCard } from "@/components/CarCard";
 import { CarDetailsModal } from "@/components/CarDetailsModal";
+import { BuyerEmptyState } from "@/components/BuyerEmptyState";
+import { InfoIconButton } from "@/components/InfoIconButton";
 import {
   SwipeDeck,
 } from "@/components/SwipeDeck";
@@ -30,6 +32,7 @@ import {
   isBuyerVisibleListing,
   isBroadExplorationEligible,
   isPrimaryDiscoveryEligible,
+  isSoldListing,
 } from "@/lib/matching";
 import { sponsorAds } from "@/lib/sponsorAds";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -54,6 +57,18 @@ const formatBudgetRange = (minBudget: number | null, maxBudget: number | null) =
   minBudget !== null && maxBudget !== null
     ? `${budgetFormatter.format(minBudget)}-${budgetFormatter.format(maxBudget)} TTD`
     : "No range set yet";
+
+function RefinePreferencesLink() {
+  return (
+    <Link
+      href="/find-the-one"
+      className="app-button inline-flex w-fit items-center justify-center gap-2 rounded-xl border border-white/18 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/6"
+    >
+      <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
+      Refine Preferences
+    </Link>
+  );
+}
 
 const DISCOVER_PREFERENCES_HANDOFF_KEY =
   "revmatched.discover-preferences-handoff";
@@ -267,11 +282,10 @@ const exploreViewDescriptions: Record<ExploreView, string> = {
   budget:
     "Cars that fit your price range, even if they don’t match every preference.",
   "keep-exploring":
-    "More unrated cars to browse that don’t fully match your defined preferences.",
+    "More cars to explore, even if they don’t match your preferences.",
   "second-chances":
     "Cars you passed before, in case you want another look.",
-  all:
-    "Everything in Explore More — including cars you’ve already liked or passed.",
+  all: "All available cars, including ones you’ve already liked or passed.",
 };
 
 export default function DiscoverPage() {
@@ -305,7 +319,6 @@ export default function DiscoverPage() {
     replaceEarliestTopPick,
     updateActiveInventoryCars,
     isAuthenticated,
-    openUnlockAlertsModal,
   } = useJourney();
   const [discoverPreferencesHandoff, setDiscoverPreferencesHandoff] =
     useState<Preferences | null>(null);
@@ -503,17 +516,22 @@ const currentExploreView =
       : []),
     ...(normalizedModel ? [normalizedModel] : []),
   ];
-  const topPickCount = Object.values(carProgress).filter(
-    (value) => value.state === "matched",
+  const topPickCount = inventoryCars.filter(
+    (car) => carProgress[car.id]?.state === "matched" && !isSoldListing(car),
   ).length;
   const canAddTopPick = topPickCount < 3;
-  const likedCount = Object.values(carProgress).filter(
-    (value) => value.state === "liked",
+  const likedCount = inventoryCars.filter(
+    (car) => carProgress[car.id]?.state === "liked",
   ).length;
   const hasLikedCars = likedCount > 0;
   const reviewLikedButtonClassName = hasLikedCars
-    ? "app-button inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
-    : "inline-flex cursor-default items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-white/7";
+    ? "app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-3 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 sm:px-5"
+    : "inline-flex min-h-11 cursor-default items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-white/7 sm:px-5";
+  const completionReviewLikedButtonClassName = isAuthenticated
+    ? reviewLikedButtonClassName
+    : hasLikedCars
+      ? "app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/25 hover:bg-white/10 sm:px-5"
+      : reviewLikedButtonClassName;
   const matchingCars = allPreferenceMatches;
   const today = useMemo(() => new Date(), []);
   const hasActionToday = useCallback(
@@ -883,97 +901,92 @@ useEffect(() => {
               </Link>
             </div>
           ) : finishedTodaysLineup ? (
-            <div className="matches-completion-card rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.045)_0%,rgba(255,255,255,0.018)_100%)] p-6 shadow-[0_18px_42px_rgba(0,0,0,0.26)]">
+            <div className="matches-completion-card rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.045)_0%,rgba(255,255,255,0.018)_100%)] p-3 shadow-[0_18px_42px_rgba(0,0,0,0.26)] sm:p-6">
               <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-white/8">
                 <div
                   className="matches-completion-progress matches-completion-progress-finish h-full rounded-full bg-emerald-400"
                   style={{ width: matchingCarsProgressPercent }}
                 />
               </div>
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-5">
                 <div>
                   <h2 className="text-2xl font-semibold text-white">
                     {isAuthenticated
-                      ? "You’ve met today’s lineup — we’ll bring you more tomorrow."
-                      : "You’ve met today’s lineup."}
+                      ? "You’re all caught up for today."
+                      : "Keep the matches coming"}
                   </h2>
                   <p className="mt-2 text-base leading-relaxed text-slate-300">
-                    Want to take another look or explore more?
+                    {isAuthenticated
+                      ? "We’ll keep watching for new cars that match your preferences."
+                      : "Sign up free and we’ll save your preferences, Likes and Top Picks — then show you new matches as cars are added."}
                   </p>
                   {!isAuthenticated ? (
-                    <div className="mt-5 space-y-3">
-                      <div>
-                        <p className="text-sm font-semibold text-white">
-                          Want us to bring you more tomorrow?
-                        </p>
-                        <p className="mt-1 text-sm leading-relaxed text-slate-400">
-                          Save your picks and we’ll keep watching for matches like these.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={openUnlockAlertsModal}
-                        className="app-button inline-flex w-fit justify-center rounded-full border border-accent bg-white px-5 py-2.5 text-sm font-semibold text-accent transition hover:bg-slate-100"
-                      >
-                        Let us keep watching for you
-                      </button>
-                    </div>
+                    <Link
+                      href="/sign-up"
+                      className="app-button mt-5 inline-flex w-fit justify-center rounded-xl border border-accent bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+                    >
+                      Save My Matches
+                    </Link>
                   ) : null}
                 </div>
-                <div className="flex flex-col gap-3 sm:items-end">
-                  <Link
-                    href="/like"
-                    aria-disabled={!hasLikedCars}
-                    tabIndex={hasLikedCars ? undefined : -1}
-                    onClick={(event) => {
-                      if (!hasLikedCars) {
-                        event.preventDefault();
-                      }
-                    }}
-                    className={reviewLikedButtonClassName}
-                  >
-                    Review Liked
-                    <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleKeepExploringShortcut}
-                    className="app-button inline-flex justify-center rounded-full border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/25 hover:bg-white/10"
-                  >
-                    Keep browsing
-                  </button>
-                  <Link
-                    href="/find-the-one"
-                    className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-slate-400 transition hover:text-white"
-                  >
-                    <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
-                    Refine Preferences
-                  </Link>
+                <div className="flex flex-nowrap items-start justify-between gap-2 sm:gap-3">
+                  <div className="min-w-0 [&_a]:min-h-11 [&_a]:w-fit [&_a]:shrink-0 [&_a]:whitespace-nowrap [&_a]:justify-start [&_a]:gap-1.5 [&_a]:px-2 sm:[&_a]:gap-2 sm:[&_a]:px-4">
+                    <RefinePreferencesLink />
+                  </div>
+                  <div className="ml-auto flex shrink-0 flex-col items-end gap-3">
+                    <Link
+                      href="/like"
+                      aria-disabled={!hasLikedCars}
+                      tabIndex={hasLikedCars ? undefined : -1}
+                      onClick={(event) => {
+                        if (!hasLikedCars) {
+                          event.preventDefault();
+                        }
+                      }}
+                      className={`w-fit shrink-0 whitespace-nowrap ${completionReviewLikedButtonClassName}`}
+                    >
+                      Review Liked
+                      <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleKeepExploringShortcut}
+                      className="app-button inline-flex justify-center rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-white/25 hover:bg-white/10"
+                    >
+                      Keep browsing
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           ) : hasNoMatches ? (
-          <div className="grid items-center gap-8 rounded-[24px] border border-dashed border-input bg-slate-950/30 px-6 py-10 text-center sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,0.8fr)] lg:gap-10 lg:text-left">
+          <div className="rounded-[24px] border border-dashed border-input bg-slate-950/30 text-center lg:text-left">
+            <BuyerEmptyState
+              className="gap-3 p-3 sm:gap-8 sm:px-10 sm:py-10 lg:gap-10 lg:px-10 lg:py-10"
+              compactOnMobile
+              illustrationIcon={Search}
+              illustrationLabel="Discover"
+            >
             <div className="mx-auto max-w-2xl lg:mx-0">
-              <div className="grid h-20 w-20 place-items-center rounded-full border border-input bg-panel text-white lg:mx-0">
+              <div className="hidden h-20 w-20 place-items-center rounded-full border border-input bg-panel text-white sm:grid lg:mx-0">
                 <Search size={36} strokeWidth={2.1} aria-hidden="true" />
               </div>
-              <h2 className="mt-5 text-2xl font-semibold text-white">No new matches right now</h2>
-      <p className="mt-2 text-base leading-relaxed text-slate-300 md:text-lg">
+              <h2 className="text-2xl font-semibold text-white sm:mt-5">No new matches right now</h2>
+      <p className="mt-1.5 text-base leading-relaxed text-slate-300 sm:mt-2 md:text-lg">
         Try widening your budget, vehicle type, or brands.
       </p>
       {hasLikedCars ? (
-        <div className="mx-auto mt-6 flex w-fit flex-col gap-3 sm:flex-row lg:mx-0">
+        <div className="mx-auto mt-4 flex w-full flex-nowrap items-center justify-between gap-2 sm:mt-6 sm:w-fit sm:gap-3 lg:mx-0">
           <Link
             href="/like"
-            className="app-button inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
+            className="app-button order-2 ml-auto inline-flex min-h-11 shrink-0 whitespace-nowrap items-center justify-center gap-2 rounded-xl bg-accent px-3 py-2 text-sm font-medium text-white transition hover:bg-accent/90 sm:order-none sm:ml-0 sm:px-5"
           >
             Review Liked
             <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
           </Link>
           <Link
             href="/find-the-one"
-            className="app-button inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm font-medium text-slate-100 transition hover:border-white/25 hover:bg-white/10"
+            className="app-button order-1 inline-flex min-h-11 shrink-0 whitespace-nowrap items-center justify-start gap-1.5 rounded-xl border border-white/15 bg-white/5 px-2 py-2 text-sm font-medium text-slate-100 transition hover:border-white/25 hover:bg-white/10 sm:order-none sm:gap-2 sm:px-5"
           >
             <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
             Go to Define
@@ -982,44 +995,32 @@ useEffect(() => {
       ) : (
         <Link
           href="/find-the-one"
-          className="app-button mx-auto mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90 lg:mx-0"
+          className="app-button mx-auto mt-4 inline-flex w-fit items-center gap-2 rounded-xl bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90 sm:mt-6 lg:mx-0"
         >
           <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
           Go to Define
         </Link>
       )}
             </div>
-
-            <div aria-hidden="true" className="relative mx-auto h-[13.5rem] w-full max-w-[24rem] sm:h-[15rem] lg:mx-0">
-              <div className="absolute left-1 top-8 h-[10.75rem] w-[43%] -rotate-[5deg] rounded-[20px] border border-white/10 bg-[#0a1b21] shadow-[0_16px_28px_rgba(0,0,0,0.2)] sm:h-[12rem]" />
-              <div className="absolute right-1 top-8 h-[10.75rem] w-[43%] rotate-[5deg] rounded-[20px] border border-white/10 bg-[#0a1b21] shadow-[0_16px_28px_rgba(0,0,0,0.2)] sm:h-[12rem]" />
-              <div className="absolute left-1/2 top-0 flex h-[12.5rem] w-[52%] -translate-x-1/2 flex-col overflow-hidden rounded-[22px] border border-white/15 bg-[#0d2229] shadow-[0_20px_34px_rgba(0,0,0,0.3)] sm:h-[14rem]">
-                <div className="flex h-[48%] items-center justify-center bg-[radial-gradient(circle_at_50%_5%,rgba(226,15,65,0.3),transparent_58%),linear-gradient(135deg,#102a31,#07191e)]">
-                  <Search size={38} strokeWidth={2.1} className="text-white" />
-                </div>
-                <div className="flex flex-1 flex-col justify-center gap-2.5 p-4">
-                  <div className="h-2.5 w-4/5 rounded-full bg-white/20" />
-                  <div className="h-2.5 w-3/5 rounded-full bg-white/10" />
-                  <div className="mt-1 flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    <Search size={13} strokeWidth={2.1} />
-                    Discover
-                  </div>
-                </div>
-              </div>
-            </div>
+            </BuyerEmptyState>
           </div>
           ) : (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-4">
               <p className="max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
-                No new matches right now — try widening your range or explore below.
+                No new matches today — try widening your range or explore below.
               </p>
-              <Link
-                href="/like"
-                className="app-button inline-flex w-fit items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition hover:bg-accent/90"
-              >
-                Review Liked
-                <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
-              </Link>
+              <div className="flex flex-nowrap items-center justify-between gap-2 sm:gap-3">
+                <div className="min-w-0 [&_a]:min-h-11 [&_a]:shrink-0 [&_a]:whitespace-nowrap [&_a]:justify-start [&_a]:gap-1.5 [&_a]:px-2 sm:[&_a]:gap-2 sm:[&_a]:px-4">
+                  <RefinePreferencesLink />
+                </div>
+                <Link
+                  href="/like"
+                  className="app-button ml-auto inline-flex min-h-11 shrink-0 whitespace-nowrap items-center gap-2 rounded-xl bg-accent px-3 py-2 text-sm font-medium text-white transition hover:bg-accent/90 sm:px-5"
+                >
+                  Review Liked
+                  <ArrowRight size={18} strokeWidth={2.4} aria-hidden="true" />
+                </Link>
+              </div>
             </div>
           )}
         </section>
@@ -1027,27 +1028,25 @@ useEffect(() => {
         <section
           id="explore-more"
           ref={exploreSectionRef}
-          className="scroll-mt-32 page-panel motion-rise-fade motion-delay-2 rounded-[26px] border border-input bg-panel p-4 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-5"
+          className="scroll-mt-32 page-panel motion-rise-fade motion-delay-2 rounded-[26px] border border-input bg-panel p-3 shadow-[0_18px_40px_rgba(0,0,0,0.22)] sm:p-5"
         >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="max-w-3xl">
-              <h2 className="flex items-center gap-3 text-2xl font-semibold text-white">
+          <div className="flex flex-nowrap items-center justify-between gap-2 sm:items-start sm:gap-4">
+            <div className="min-w-0 max-w-3xl">
+              <h2 className="flex items-center gap-2 whitespace-nowrap text-2xl font-semibold text-white sm:gap-3">
                 Explore More
-                <button
-                  type="button"
-                  onClick={() => setIsExploreHelpOpen((current) => !current)}
-                  aria-expanded={isExploreHelpOpen}
-                  aria-label="How Explore More works"
-                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-accent bg-accent text-white shadow-[0_10px_24px_rgba(209,19,58,0.28)] transition hover:scale-105 hover:brightness-110 hover:shadow-[0_14px_30px_rgba(209,19,58,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2 focus-visible:ring-offset-panel active:scale-95"
-                >
-                  <span aria-hidden="true" className="font-serif text-[1.3rem] font-bold italic leading-none">
-                    i
-                  </span>
-                </button>
+                  <InfoIconButton
+                    onClick={() => setIsExploreHelpOpen((current) => !current)}
+                    aria-expanded={isExploreHelpOpen}
+                    aria-label="How Explore More works"
+                  >
+                    <span aria-hidden="true" className="font-serif text-[1.3rem] font-bold italic leading-none">
+                      i
+                    </span>
+                  </InfoIconButton>
               </h2>
             </div>
-            <div className="flex flex-wrap items-center gap-3 sm:justify-end">
-              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 backdrop-blur-sm transition hover:bg-white/10">
+            <div className="flex shrink-0 items-center sm:justify-end">
+              <div className="inline-flex w-fit whitespace-nowrap items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-200 backdrop-blur-sm transition hover:bg-white/10 sm:px-4">
                 {exploreCars.length} cars in view
               </div>
             </div>
@@ -1081,7 +1080,7 @@ useEffect(() => {
                       Keep exploring
                     </p>
                     <p className="mt-1 text-base leading-7 text-slate-300">
-                      More unrated cars to browse that don’t fully match your defined preferences.
+                      More cars to explore, even if they don’t match your preferences.
                     </p>
                   </div>
                 </div>
@@ -1107,7 +1106,7 @@ useEffect(() => {
                       All
                     </p>
                     <p className="mt-1 text-base leading-7 text-slate-300">
-                      Everything in Explore More — including cars you’ve already liked or passed.
+                      All available cars, including ones you’ve already liked or passed.
                     </p>
                   </div>
                 </div>
@@ -1214,11 +1213,6 @@ useEffect(() => {
                 </div>
               </div>
             ) : null}
-            {currentExploreView === "all" ? (
-              <p className="mt-1 text-xs text-slate-500">
-                Includes cars you’ve already seen.
-              </p>
-            ) : null}
             <p className="mt-3 px-1 text-sm font-medium leading-6 text-slate-300">
               {exploreViewDescriptions[currentExploreView]}
             </p>
@@ -1276,7 +1270,7 @@ useEffect(() => {
             </div>
 
             {!exploreCars.length ? (
-              <div className="rounded-[32px] border border-dashed border-input bg-input/60 px-6 py-12 text-center shadow-[0_16px_40px_rgba(0,0,0,0.2)] sm:px-10 sm:py-14">
+              <div className="rounded-[32px] border border-dashed border-input bg-input/60 px-5 py-7 text-center shadow-[0_16px_40px_rgba(0,0,0,0.2)] sm:px-10 sm:py-14">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-slate-100 shadow-lg">
                   <Search className="h-8 w-8" aria-hidden="true" />
                 </div>

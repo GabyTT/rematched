@@ -103,7 +103,7 @@ export function Roadmap({ step }: RoadmapProps) {
   const shouldGuideDefine =
     mounted && step === "discover" && !hasUsablePreferences(preferences);
   const likeCount = activeInventoryCars.filter(
-    (car) => carProgress[car.id]?.state === "liked",
+    (car) => ["liked", "matched"].includes(carProgress[car.id]?.state ?? ""),
   ).length;
   const matchCount = activeInventoryCars.filter(
     (car) => carProgress[car.id]?.state === "matched",
@@ -220,13 +220,13 @@ export function Roadmap({ step }: RoadmapProps) {
 
   return (
     <section className="sticky top-0 z-40 border-b border-white/5 bg-[linear-gradient(180deg,rgba(3,11,17,0.92)_0%,rgba(3,11,17,0.76)_100%)]">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-5 py-2.5 sm:px-7 lg:px-10 lg:py-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-400">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-1.5 px-5 py-2 sm:gap-2 sm:px-7 sm:py-2.5 lg:px-10 lg:py-3">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.26em] text-slate-400 sm:text-xs sm:tracking-[0.32em]">
           Journey roadmap
         </p>
         <div className="overflow-x-auto pb-0.5">
           <div className="relative min-w-[30rem] md:min-w-0">
-            <div className="absolute left-[12.5%] right-[12.5%] top-[1.75rem] grid grid-cols-3 gap-2 sm:top-8 sm:gap-3">
+            <div className="absolute left-[12.5%] right-[12.5%] top-6 grid grid-cols-3 gap-2 sm:top-8 sm:gap-3">
               {connectorStates.map((isActive, index) => (
                 <div
                   key={roadmapSteps[index + 1]?.key}
@@ -290,11 +290,11 @@ export function Roadmap({ step }: RoadmapProps) {
                     key={item.key}
                     href={item.href}
                     onClick={(event) => handleDiscoverClick(event, item.href)}
-                    className="nav-pill relative z-10 flex min-w-0 flex-col items-center rounded-[28px] border border-transparent px-1 py-1.5 text-center sm:px-2"
+                    className="nav-pill relative z-10 flex min-w-0 flex-col items-center rounded-[28px] border border-transparent px-0.5 py-1 text-center sm:px-2 sm:py-1.5"
                     aria-current={isActive ? "step" : undefined}
                   >
                     <span
-                      className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition sm:h-12 sm:w-12 ${iconShellClasses} ${
+                      className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition sm:h-12 sm:w-12 ${iconShellClasses} ${
                         shouldPulseTransitionDestination
                           ? "roadmap-transition-destination-pulse"
                           : ""
@@ -302,12 +302,12 @@ export function Roadmap({ step }: RoadmapProps) {
                         shouldPulseDefineStep ? "roadmap-define-attention" : ""
                       }`}
                     >
-                      <Icon size={18} strokeWidth={2.4} aria-hidden="true" className="sm:h-5 sm:w-5" />
+                      <Icon size={16} strokeWidth={2.4} aria-hidden="true" className="sm:h-5 sm:w-5" />
                     </span>
-                    <span className="mt-2 flex items-center justify-center text-[0.84rem] font-semibold uppercase tracking-[0.12em] sm:mt-3 sm:text-[1rem] sm:tracking-[0.16em] md:text-[1.08rem]">
-                      <span className={titleClasses}>{label}</span>
+                    <span className="mt-1.5 flex items-center justify-center text-xs font-semibold uppercase tracking-[0.08em] sm:mt-3 sm:text-[1rem] sm:tracking-[0.16em] md:text-[1.08rem]">
+                      <span className={`whitespace-nowrap ${titleClasses}`}>{label}</span>
                       {count !== null ? (
-                        <span className="ml-1 inline-flex min-w-8 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm font-semibold leading-none text-slate-200 backdrop-blur-sm transition hover:bg-white/10 sm:ml-1.5 sm:min-w-10">
+                        <span className="ml-1 inline-flex min-w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold leading-none text-slate-200 backdrop-blur-sm transition hover:bg-white/10 sm:ml-1.5 sm:min-w-10 sm:px-3 sm:py-1 sm:text-sm">
                           {count}
                         </span>
                       ) : null}

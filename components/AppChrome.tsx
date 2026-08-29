@@ -32,11 +32,14 @@ const appNavItems = [
   { href: "/moving-on", label: "Moving On", section: "moving-on", icon: ArrowRightLeft },
 ];
 
-const accountNavItems = [
-  { href: "/sign-up", label: "Sign Up", section: "sign-up", icon: UserPlus },
+const authenticatedAccountNavItems = [
   { href: "/profile", label: "Profile", section: "profile", icon: User },
   { href: "/profile", label: "Settings", section: "settings", icon: Settings },
-  { href: "/admin", label: "Admin", section: "admin", icon: Shield },
+];
+
+const anonymousAccountNavItems = [
+  { href: "/sign-in", label: "Sign In", section: "sign-in", icon: User },
+  { href: "/sign-up", label: "Sign Up Free", section: "sign-up", icon: UserPlus },
 ];
 
 const stepByPathname: Record<string, RoadmapStep> = {
@@ -57,6 +60,8 @@ export function AppChrome() {
   const {
     isUnlockAlertsModalOpen,
     closeUnlockAlertsModal,
+    hasRole,
+    isAuthenticated,
     logOut,
     updateActiveInventoryCars,
   } = useJourney();
@@ -72,6 +77,8 @@ export function AppChrome() {
           ? "profile"
           : pathname === "/sign-up"
             ? "sign-up"
+          : pathname === "/sign-in"
+            ? "sign-in"
           : pathname.startsWith("/admin")
             ? "admin"
           : "home";
@@ -140,9 +147,25 @@ export function AppChrome() {
       void loadActiveInventory();
     });
 
+    const inventoryChanges = supabase
+      .channel("buyer-listing-availability")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "normalized_listings",
+        },
+        () => {
+          void loadActiveInventory();
+        },
+      )
+      .subscribe();
+
     return () => {
       isActive = false;
       subscription.unsubscribe();
+      void supabase.removeChannel(inventoryChanges);
     };
   }, [supabase, updateActiveInventoryCars]);
 
@@ -165,6 +188,14 @@ export function AppChrome() {
     setIsDrawerOpen(false);
     router.push("/");
   };
+  const accountNavItems = isAuthenticated
+    ? [
+        ...authenticatedAccountNavItems,
+        ...(hasRole("admin")
+          ? [{ href: "/admin", label: "Admin", section: "admin", icon: Shield }]
+          : []),
+      ]
+    : anonymousAccountNavItems;
   const activeDrawerClass =
     "text-white";
   const inactiveDrawerClass =
@@ -310,7 +341,7 @@ export function AppChrome() {
                   </Link>
                 );
               })}
-              <button
+              {isAuthenticated ? <button
                 type="button"
                 onClick={() => {
                   void handleLogOut();
@@ -332,7 +363,7 @@ export function AppChrome() {
                   strokeWidth={2.2}
                   className={`shrink-0 transition ${inactiveDrawerChevronClass}`}
                 />
-              </button>
+              </button> : null}
             </div>
           </nav>
           </aside>
